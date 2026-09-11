@@ -57,6 +57,7 @@
           </h3>
 
           <v-btn
+              v-if="canWrite"
               variant="outlined"
               @click="openCreateActivityDialog"
           >
@@ -72,10 +73,10 @@
             <v-list-item
                 :title="`${block.startTime} – ${block.endTime}`"
                 :subtitle="block.homeoffice ? 'Homeoffice' : 'Vor Ort'"
-                @click="openEditActivityDialog(block)"
+                @click="canWrite && openEditActivityDialog(block)"
             >
               <template #append>
-                <v-menu>
+                <v-menu v-if="canWrite">
                   <template #activator="{ props }">
                     <v-btn
                         v-bind="props"
@@ -128,6 +129,7 @@
           </h3>
 
           <v-btn
+              v-if="canWrite"
               variant="outlined"
               @click="openCreateCreditDialog"
           >
@@ -143,10 +145,10 @@
             <v-list-item
                 :title="formatMinutes(credit.minutes)"
                 :subtitle="credit.reason"
-                @click="openEditCreditDialog(credit)"
+                @click="canWrite && openEditCreditDialog(credit)"
             >
               <template #append>
-                <v-menu>
+                <v-menu v-if="canWrite">
                   <template #activator="{ props }">
                     <v-btn
                         v-bind="props"
@@ -318,11 +320,13 @@
 import { computed, reactive, ref } from "vue";
 import { useRoute } from "vue-router";
 
+import useHasAnyRole from "@/composables/useHasAnyRole";
 import {
   mockStudentDays,
   type ActivityBlock,
   type TimeCredit,
 } from "@/mocks/studentDetail.mock";
+import { Role } from "@/types/Role";
 
 /*
  * Student-ID aus /student/:id
@@ -330,6 +334,11 @@ import {
 const route = useRoute("/student/[id]");
 
 const studentId = Number(route.params.id);
+
+/*
+ * Rollen
+ */
+const canWrite = useHasAnyRole(Role.WRITER);
 
 /*
  * Mock-Daten
@@ -415,6 +424,10 @@ const newCredit = reactive({
  * ============================================
  */
 function openCreateActivityDialog() {
+  if (!canWrite.value) {
+    return;
+  }
+
   editingBlockId.value = null;
 
   newBlock.startTime = "";
@@ -430,6 +443,10 @@ function openCreateActivityDialog() {
  * ============================================
  */
 function openEditActivityDialog(block: ActivityBlock) {
+  if (!canWrite.value) {
+    return;
+  }
+
   editingBlockId.value = block.id;
 
   newBlock.startTime = block.startTime;
@@ -445,7 +462,7 @@ function openEditActivityDialog(block: ActivityBlock) {
  * ============================================
  */
 function saveActivityBlock() {
-  if (!selectedDayData.value) {
+  if (!canWrite.value || !selectedDayData.value) {
     return;
   }
 
@@ -475,12 +492,10 @@ function saveActivityBlock() {
      *
      * POST /taetigkeitenblock/
      */
-  }
-
-  /*
-   * Bestehenden Tätigkeitsblock bearbeiten
-   */
-  else {
+  } else {
+    /*
+     * Bestehenden Tätigkeitsblock bearbeiten
+     */
     const block = selectedDayData.value.blocks.find(
         (block) => block.id === editingBlockId.value,
     );
@@ -490,7 +505,6 @@ function saveActivityBlock() {
       block.endTime = newBlock.endTime;
       block.homeoffice = newBlock.homeoffice;
     }
-
 
     console.debug(
         "Tätigkeitsblock bearbeitet:",
@@ -513,7 +527,7 @@ function saveActivityBlock() {
  * ============================================
  */
 function deleteActivityBlock(id: number) {
-  if (!selectedDayData.value) {
+  if (!canWrite.value || !selectedDayData.value) {
     return;
   }
 
@@ -543,6 +557,10 @@ function deleteActivityBlock(id: number) {
  * ============================================
  */
 function openCreateCreditDialog() {
+  if (!canWrite.value) {
+    return;
+  }
+
   editingCreditId.value = null;
 
   newCredit.minutes = undefined;
@@ -557,6 +575,10 @@ function openCreateCreditDialog() {
  * ============================================
  */
 function openEditCreditDialog(credit: TimeCredit) {
+  if (!canWrite.value) {
+    return;
+  }
+
   editingCreditId.value = credit.id;
 
   newCredit.minutes = credit.minutes;
@@ -572,6 +594,7 @@ function openEditCreditDialog(credit: TimeCredit) {
  */
 function saveCredit() {
   if (
+      !canWrite.value ||
       !selectedDayData.value ||
       newCredit.minutes === undefined
   ) {
@@ -603,12 +626,10 @@ function saveCredit() {
      *
      * POST /zeitgutschrift/
      */
-  }
-
-  /*
-   * Bestehende Zeitgutschrift bearbeiten
-   */
-  else {
+  } else {
+    /*
+     * Bestehende Zeitgutschrift bearbeiten
+     */
     const credit = selectedDayData.value.credits.find(
         (credit) => credit.id === editingCreditId.value,
     );
@@ -639,7 +660,7 @@ function saveCredit() {
  * ============================================
  */
 function deleteCredit(id: number) {
-  if (!selectedDayData.value) {
+  if (!canWrite.value || !selectedDayData.value) {
     return;
   }
 

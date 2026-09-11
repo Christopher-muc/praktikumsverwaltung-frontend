@@ -5,9 +5,9 @@
       <h1 class="text-h4">Studenten</h1>
 
       <v-btn
-        v-if="hasRole('writer')"
-        variant="outlined"
-        @click="openDialog"
+          v-if="canWrite"
+          variant="outlined"
+          @click="openDialog"
       >
         Student hinzufügen
       </v-btn>
@@ -16,31 +16,33 @@
     <!-- Studentenliste -->
     <v-list>
       <template
-        v-for="(student, index) in filteredStudents"
-        :key="student.id"
+          v-for="(student, index) in filteredStudents"
+          :key="student.id"
       >
         <v-list-item
-          :title="`${student.firstName} ${student.lastName}`"
-          :to="`/student/${student.id}`"
+            :title="`${student.firstName} ${student.lastName}`"
+            :to="`/student/${student.id}`"
         />
 
-        <v-divider v-if="index < filteredStudents.length - 1" />
+        <v-divider
+            v-if="index < filteredStudents.length - 1"
+        />
       </template>
     </v-list>
 
     <!-- Meldung, wenn nichts gefunden wurde -->
     <div
-      v-if="filteredStudents.length === 0"
-      class="text-medium-emphasis pa-4"
+        v-if="filteredStudents.length === 0"
+        class="text-medium-emphasis pa-4"
     >
       Keine Studenten gefunden.
     </div>
 
     <!-- Student hinzufügen Dialog -->
     <v-dialog
-      v-model="dialog"
-      max-width="650"
-      persistent
+        v-model="dialog"
+        max-width="650"
+        persistent
     >
       <v-card rounded="xl">
         <!-- Titel -->
@@ -50,46 +52,46 @@
 
         <v-card-text class="pa-6 pt-3">
           <v-stepper
-            v-model="step"
-            :items="['Student', 'Praktikum']"
-            hide-actions
-            flat
+              v-model="step"
+              :items="['Student', 'Praktikum']"
+              hide-actions
+              flat
           >
             <!-- Schritt 1: Student -->
             <template #item.1>
               <v-form
-                ref="studentForm"
-                class="pt-3"
-                @submit.prevent="nextStep"
+                  ref="studentForm"
+                  class="pt-3"
+                  @submit.prevent="nextStep"
               >
                 <v-text-field
-                  v-model="newStudent.firstName"
-                  label="Vorname"
-                  variant="outlined"
-                  :rules="[required]"
-                  class="mb-2"
-                  autofocus
+                    v-model="newStudent.firstName"
+                    label="Vorname"
+                    variant="outlined"
+                    :rules="[required]"
+                    class="mb-2"
+                    autofocus
                 />
 
                 <v-text-field
-                  v-model="newStudent.lastName"
-                  label="Nachname"
-                  variant="outlined"
-                  :rules="[required]"
-                  class="mb-2"
+                    v-model="newStudent.lastName"
+                    label="Nachname"
+                    variant="outlined"
+                    :rules="[required]"
+                    class="mb-2"
                 />
 
                 <div class="d-flex justify-space-between mt-4">
                   <v-btn
-                    variant="text"
-                    @click="closeDialog"
+                      variant="text"
+                      @click="closeDialog"
                   >
                     Abbrechen
                   </v-btn>
 
                   <v-btn
-                    color="primary"
-                    type="submit"
+                      color="primary"
+                      type="submit"
                   >
                     Weiter
                   </v-btn>
@@ -101,58 +103,58 @@
             <template #item.2>
               <v-form @submit.prevent="createStudent">
                 <v-text-field
-                  v-model.number="newStudent.targetHours"
-                  label="Sollzeit pro Woche"
-                  type="number"
-                  variant="outlined"
-                  suffix="h"
-                  min="0"
-                  class="mb-2"
+                    v-model.number="newStudent.targetHours"
+                    label="Sollzeit pro Woche"
+                    type="number"
+                    variant="outlined"
+                    suffix="h"
+                    min="0"
+                    class="mb-2"
                 />
 
                 <v-text-field
-                  v-model.number="newStudent.requiredWeeks"
-                  label="Benötigte Wochen"
-                  type="number"
-                  variant="outlined"
-                  min="0"
-                  class="mb-2"
+                    v-model.number="newStudent.requiredWeeks"
+                    label="Benötigte Wochen"
+                    type="number"
+                    variant="outlined"
+                    min="0"
+                    class="mb-2"
                 />
 
                 <v-text-field
-                  v-model="newStudent.startDate"
-                  label="Beginn"
-                  type="date"
-                  variant="outlined"
-                  class="mb-2"
+                    v-model="newStudent.startDate"
+                    label="Beginn"
+                    type="date"
+                    variant="outlined"
+                    class="mb-2"
                 />
 
                 <v-text-field
-                  v-model="newStudent.endDate"
-                  label="Ende"
-                  type="date"
-                  variant="outlined"
+                    v-model="newStudent.endDate"
+                    label="Ende"
+                    type="date"
+                    variant="outlined"
                 />
 
                 <div class="d-flex justify-space-between mt-4">
                   <v-btn
-                    variant="text"
-                    @click="step = 1"
+                      variant="text"
+                      @click="step = 1"
                   >
                     Zurück
                   </v-btn>
 
                   <div class="d-flex ga-2">
                     <v-btn
-                      variant="text"
-                      @click="closeDialog"
+                        variant="text"
+                        @click="closeDialog"
                     >
                       Abbrechen
                     </v-btn>
 
                     <v-btn
-                      color="primary"
-                      type="submit"
+                        color="primary"
+                        type="submit"
                     >
                       Student anlegen
                     </v-btn>
@@ -171,7 +173,12 @@
 import { computed, reactive, ref } from "vue";
 import { useRoute } from "vue-router";
 
+import useHasAnyRole from "@/composables/useHasAnyRole";
+import { Role } from "@/types/Role";
+
 const route = useRoute();
+
+const canWrite = useHasAnyRole(Role.WRITER);
 
 const dialog = ref(false);
 const step = ref(1);
@@ -204,8 +211,8 @@ const students = ref([
  */
 const filteredStudents = computed(() => {
   const search = String(route.query.search ?? "")
-    .trim()
-    .toLowerCase();
+      .trim()
+      .toLowerCase();
 
   if (!search) {
     return students.value;
@@ -231,12 +238,16 @@ const newStudent = reactive({
  * Pflichtfeld-Validierung
  */
 const required = (value: string) =>
-  !!value?.trim() || "Dieses Feld ist erforderlich";
+    !!value?.trim() || "Dieses Feld ist erforderlich";
 
 /**
  * Dialog öffnen
  */
 function openDialog() {
+  if (!canWrite.value) {
+    return;
+  }
+
   resetForm();
   dialog.value = true;
 }
@@ -259,12 +270,16 @@ async function nextStep() {
  * Student anlegen
  */
 async function createStudent() {
-  console.log("Student:", {
+  if (!canWrite.value) {
+    return;
+  }
+
+  console.debug("Student:", {
     firstName: newStudent.firstName,
     lastName: newStudent.lastName,
   });
 
-  console.log("Praktikum:", {
+  console.debug("Praktikum:", {
     targetHours: newStudent.targetHours,
     requiredWeeks: newStudent.requiredWeeks,
     startDate: newStudent.startDate,
@@ -310,6 +325,9 @@ function closeDialog() {
   resetForm();
 }
 
+/**
+ * Formular zurücksetzen
+ */
 function resetForm() {
   step.value = 1;
 
