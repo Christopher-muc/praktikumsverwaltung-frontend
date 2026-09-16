@@ -45,33 +45,19 @@
         class="d-flex align-center justify-end"
       >
         <theme-toggle-btn class="mr-2" />
-
-
-        <v-icon-btn
-          v-if="userInfoStore.userInfo !== null"
-          variant="text"
-          class="mr-2"
-        >
-          <ad2-image-avatar
-            :username="userInfoStore.userInfo.preferred_username"
-          />
-        </v-icon-btn>
       </v-col>
     </v-row>
   </v-app-bar>
 </template>
 
 <script setup lang="ts">
+import { mdiMagnify } from "@mdi/js";
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useRules } from "vuetify";
 
-import Ad2ImageAvatar from "@/components/common/Ad2ImageAvatar.vue";
 import ThemeToggleBtn from "@/components/common/ThemeToggleBtn.vue";
-import { useUserInfoStore } from "@/stores/userinfo";
-
-const userInfoStore = useUserInfoStore();
 
 const { t } = useI18n();
 const router = useRouter();

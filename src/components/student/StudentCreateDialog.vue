@@ -12,11 +12,11 @@
       <v-card-text class="pa-6 pt-3">
         <v-stepper
           v-model="step"
-          :items="['Student', 'Praktikum']"
+          :items="['Student', 'Praktikum', 'Studiengang']"
           hide-actions
           flat
         >
-          <!-- Schritt 1: Student -->
+          <!-- SCHRITT 1: STUDENT -->
           <template #[`item.1`]>
             <v-form
               ref="studentForm"
@@ -58,11 +58,11 @@
             </v-form>
           </template>
 
-          <!-- Schritt 2: Praktikum -->
+          <!-- SCHRITT 2: PRAKTIKUM -->
           <template #[`item.2`]>
             <v-form
               ref="praktikumForm"
-              @submit.prevent="createStudent"
+              @submit.prevent="nextPraktikumStep"
             >
               <v-text-field
                 v-model.number="newStudent.targetHours"
@@ -120,6 +120,47 @@
                   <v-btn
                     color="primary"
                     type="submit"
+                    :disabled="saving"
+                  >
+                    Weiter
+                  </v-btn>
+                </div>
+              </div>
+            </v-form>
+          </template>
+
+          <!-- SCHRITT 3: STUDIENGANG -->
+          <template #[`item.3`]>
+            <v-form @submit.prevent="createStudent">
+              <v-text-field
+                v-model="studiengang"
+                label="Studiengang"
+                variant="outlined"
+                class="mt-4 mb-2"
+                autofocus
+              />
+
+              <div class="d-flex justify-space-between mt-4">
+                <v-btn
+                  variant="text"
+                  :disabled="saving"
+                  @click="step = 2"
+                >
+                  Zurück
+                </v-btn>
+
+                <div class="d-flex ga-2">
+                  <v-btn
+                    variant="text"
+                    :disabled="saving"
+                    @click="close"
+                  >
+                    Abbrechen
+                  </v-btn>
+
+                  <v-btn
+                    color="primary"
+                    type="submit"
                     :loading="saving"
                   >
                     Student anlegen
@@ -161,7 +202,6 @@ const emit = defineEmits<{
  * APIs
  */
 const studentApi = ApiFactory.getInstance(StudentControllerApi);
-
 const praktikumApi = ApiFactory.getInstance(PraktikumControllerApi);
 
 /*
@@ -187,6 +227,11 @@ const newStudent = reactive({
   startDate: "",
   endDate: "",
 });
+
+/*
+ * Studiengang
+ */
+const studiengang = ref("");
 
 /*
  * Validierung
@@ -219,18 +264,22 @@ async function nextStep() {
 }
 
 /*
- * Student + optional Praktikum erstellen
+ * Schritt 2 -> Schritt 3
  */
-async function createStudent() {
-  /*
-   * Erst Praktikumsformular validieren.
-   */
+async function nextPraktikumStep() {
   const result = await praktikumForm.value?.validate();
 
   if (!result?.valid) {
     return;
   }
 
+  step.value = 3;
+}
+
+/*
+ * Student + optional Praktikum erstellen
+ */
+async function createStudent() {
   saving.value = true;
 
   try {
@@ -245,10 +294,7 @@ async function createStudent() {
     });
 
     /*
-     * 2. Prüfen, ob überhaupt Praktikumsdaten
-     * eingegeben wurden.
-     *
-     * Praktikum ist optional.
+     * 2. Prüfen, ob Praktikumsdaten eingegeben wurden.
      */
     const hasPraktikumData =
       newStudent.targetHours !== undefined ||
@@ -257,7 +303,7 @@ async function createStudent() {
       newStudent.endDate !== "";
 
     /*
-     * 3. Nur dann ein Praktikum anlegen.
+     * 3. Optional Praktikum erstellen.
      */
     if (hasPraktikumData) {
       await praktikumApi.createPraktikum({
@@ -278,7 +324,18 @@ async function createStudent() {
     }
 
     /*
-     * Parent-Komponente informieren.
+     * 4. Studiengang
+     *
+     * Der eingegebene Studiengang steht hier in:
+     *
+     * studiengang.value
+     *
+     * Sobald ein passender Backend-Endpunkt vorhanden ist,
+     * kann er hier gespeichert bzw. dem Studenten zugeordnet werden.
+     */
+
+    /*
+     * 5. Parent informieren.
      */
     emit("created");
 
@@ -311,6 +368,8 @@ function resetForm() {
 
   newStudent.startDate = "";
   newStudent.endDate = "";
+
+  studiengang.value = "";
 
   studentForm.value?.resetValidation();
   praktikumForm.value?.resetValidation();

@@ -8,7 +8,7 @@
       <v-card-title class="pa-6 pb-2"> Student bearbeiten </v-card-title>
 
       <v-card-text class="pa-6">
-        <!-- Auswahl: Name oder Praktikum -->
+        <!-- Auswahl -->
         <v-btn-toggle
           v-model="editMode"
           mandatory
@@ -18,9 +18,14 @@
           <v-btn value="name"> Name </v-btn>
 
           <v-btn value="praktikum"> Praktikum </v-btn>
+
+          <v-btn value="studiengang"> Studiengang </v-btn>
         </v-btn-toggle>
 
-        <!-- Name -->
+        <!-- ======================================== -->
+        <!-- NAME -->
+        <!-- ======================================== -->
+
         <div v-if="editMode === 'name'">
           <v-text-field
             v-model="firstName"
@@ -38,8 +43,11 @@
           />
         </div>
 
-        <!-- Praktikum -->
-        <div v-else>
+        <!-- ======================================== -->
+        <!-- PRAKTIKUM -->
+        <!-- ======================================== -->
+
+        <div v-if="editMode === 'praktikum'">
           <v-progress-linear
             v-if="praktikumLoading"
             indeterminate
@@ -103,7 +111,80 @@
           </template>
         </div>
 
-        <!-- Aktionen -->
+        <!-- ======================================== -->
+        <!-- STUDIENGÄNGE -->
+        <!-- ======================================== -->
+
+        <div v-if="editMode === 'studiengang'">
+          <v-progress-linear
+            v-if="studiengaengeLoading"
+            indeterminate
+            class="mb-4"
+          />
+
+          <template v-else>
+            <div class="text-h6 mb-2">Studiengänge</div>
+
+            <!-- Vorhandene Studiengänge -->
+            <v-list
+              v-if="studiengaenge.length > 0"
+              class="mb-4"
+            >
+              <template
+                v-for="(studiengang, index) in studiengaenge"
+                :key="studiengang.studiengangNr ?? index"
+              >
+                <v-list-item :title="studiengang.name">
+                  <template #append>
+                    <v-btn
+                      variant="text"
+                      size="small"
+                      @click="removeStudiengang(index)"
+                    >
+                      Löschen
+                    </v-btn>
+                  </template>
+                </v-list-item>
+
+                <v-divider v-if="index < studiengaenge.length - 1" />
+              </template>
+            </v-list>
+
+            <!-- Keine Studiengänge vorhanden -->
+            <v-alert
+              v-else
+              type="info"
+              variant="tonal"
+              class="mb-4"
+            >
+              Für diesen Studenten ist noch kein Studiengang hinterlegt.
+            </v-alert>
+
+            <!-- Neuen Studiengang hinzufügen -->
+            <div class="d-flex align-center ga-2 mt-4">
+              <v-text-field
+                v-model="newStudiengang"
+                label="Studiengang"
+                variant="outlined"
+                hide-details
+                @keyup.enter="addStudiengang"
+              />
+
+              <v-btn
+                color="primary"
+                variant="outlined"
+                @click="addStudiengang"
+              >
+                Hinzufügen
+              </v-btn>
+            </div>
+          </template>
+        </div>
+
+        <!-- ======================================== -->
+        <!-- AKTIONEN -->
+        <!-- ======================================== -->
+
         <div class="d-flex justify-end ga-2 mt-6">
           <v-btn
             variant="text"
@@ -116,7 +197,7 @@
           <v-btn
             color="primary"
             :loading="saving"
-            :disabled="praktikumLoading"
+            :disabled="praktikumLoading || studiengaengeLoading"
             @click="save"
           >
             Speichern
@@ -131,6 +212,7 @@
 import type {
   FullPraktikumDTO,
   SimpleStudentDTO,
+  Studiengang,
 } from "@/api/generated/api-spec";
 
 import { ref, watch } from "vue";
@@ -172,7 +254,7 @@ const praktikumApi = ApiFactory.getInstance(PraktikumControllerApi);
 /*
  * Bearbeitungsmodus
  */
-const editMode = ref<"name" | "praktikum">("name");
+const editMode = ref<"name" | "praktikum" | "studiengang">("name");
 
 /*
  * Student
@@ -193,10 +275,21 @@ const wochenarbeitszeit = ref<number | undefined>(undefined);
 const benoetigteWochen = ref<number | undefined>(undefined);
 
 /*
+ * Studiengänge
+ */
+const studiengaenge = ref<Studiengang[]>([]);
+
+const newStudiengang = ref("");
+
+/*
  * Status
  */
 const praktikumLoading = ref(false);
+
+const studiengaengeLoading = ref(false);
+
 const saving = ref(false);
+
 const dateError = ref("");
 
 /*
@@ -206,8 +299,7 @@ const required = (value: string) =>
   !!value?.trim() || "Dieses Feld ist erforderlich";
 
 /*
- * Wenn ein Student ausgewählt wird:
- * Studentendaten übernehmen und Praktikum laden.
+ * Wenn ein Student ausgewählt wird.
  */
 watch(
   () => props.student,
@@ -216,12 +308,20 @@ watch(
       return;
     }
 
+    /*
+     * Die einfachen Studentendaten kommen direkt
+     * aus dem SimpleStudentDTO.
+     */
     firstName.value = student.vorname ?? "";
     lastName.value = student.nachname ?? "";
 
     editMode.value = "name";
 
-    await loadPraktikum();
+    /*
+     * Praktikum und vollständigen Studenten
+     * parallel laden.
+     */
+    await Promise.all([loadPraktikum(), loadStudiengaenge()]);
   },
   {
     immediate: true,
@@ -229,10 +329,11 @@ watch(
 );
 
 /*
- * Praktikum laden.
- *
- * Falls keines existiert, bleiben die Felder leer.
+ * ============================================
+ * PRAKTIKUM LADEN
+ * ============================================
  */
+
 async function loadPraktikum() {
   if (props.student?.studentId === undefined) {
     return;
@@ -240,10 +341,8 @@ async function loadPraktikum() {
 
   praktikumLoading.value = true;
 
-  /*
-   * Alte Werte zunächst entfernen.
-   */
   praktikum.value = null;
+
   resetPraktikumFields();
 
   try {
@@ -261,13 +360,6 @@ async function loadPraktikum() {
 
     benoetigteWochen.value = loadedPraktikum.benoetigteWochen;
   } catch (error) {
-    /*
-     * getPraktikum liefert bei einem Studenten ohne
-     * Praktikum einen Fehler (z. B. 404).
-     *
-     * Dann behandeln wir das Praktikum als "noch nicht
-     * vorhanden". Beim Speichern wird POST verwendet.
-     */
     console.debug(
       "Kein Praktikum für Student vorhanden:",
       props.student.studentId,
@@ -275,6 +367,7 @@ async function loadPraktikum() {
     );
 
     praktikum.value = null;
+
     resetPraktikumFields();
   } finally {
     praktikumLoading.value = false;
@@ -282,20 +375,128 @@ async function loadPraktikum() {
 }
 
 /*
- * Entscheiden, was gespeichert werden soll.
+ * ============================================
+ * STUDIENGÄNGE LADEN
+ * ============================================
  */
-async function save() {
-  if (editMode.value === "name") {
-    await updateStudent();
+
+async function loadStudiengaenge() {
+  if (props.student?.studentId === undefined) {
     return;
   }
 
-  await savePraktikum();
+  studiengaengeLoading.value = true;
+
+  studiengaenge.value = [];
+
+  try {
+    /*
+     * SimpleStudentDTO besitzt keine Studiengänge.
+     *
+     * Deshalb vollständigen StudentDTO laden.
+     */
+    const fullStudent = await studentApi.getStudent(props.student.studentId);
+
+    /*
+     * Eine Kopie des Arrays erstellen.
+     *
+     * Dadurch verändern wir nicht direkt
+     * das vom Backend geladene Objekt.
+     */
+    studiengaenge.value = [...(fullStudent.studiengaenge ?? [])];
+  } catch (error) {
+    console.error(
+      "Studiengänge konnten nicht geladen werden:",
+      props.student.studentId,
+      error
+    );
+
+    studiengaenge.value = [];
+  } finally {
+    studiengaengeLoading.value = false;
+  }
 }
 
 /*
- * Student aktualisieren.
+ * ============================================
+ * STUDIENGANG LOKAL HINZUFÜGEN
+ * ============================================
  */
+
+function addStudiengang() {
+  const name = newStudiengang.value.trim();
+
+  /*
+   * Leeren Studiengang nicht hinzufügen.
+   */
+  if (!name) {
+    return;
+  }
+
+  /*
+   * Prüfen, ob der Studiengang bereits
+   * in der Liste vorhanden ist.
+   */
+  const alreadyExists = studiengaenge.value.some(
+    (studiengang) => studiengang.name.toLowerCase() === name.toLowerCase()
+  );
+
+  if (alreadyExists) {
+    return;
+  }
+
+  /*
+   * Noch keine studiengangNr vorhanden,
+   * da der Eintrag noch nicht im Backend
+   * gespeichert wurde.
+   */
+  studiengaenge.value.push({
+    name,
+  });
+
+  newStudiengang.value = "";
+}
+
+/*
+ * ============================================
+ * STUDIENGANG LOKAL LÖSCHEN
+ * ============================================
+ */
+
+function removeStudiengang(index: number) {
+  studiengaenge.value.splice(index, 1);
+}
+
+/*
+ * ============================================
+ * SPEICHERN
+ * ============================================
+ */
+
+async function save() {
+  if (editMode.value === "name") {
+    await updateStudent();
+
+    return;
+  }
+
+  if (editMode.value === "praktikum") {
+    await savePraktikum();
+
+    return;
+  }
+
+  if (editMode.value === "studiengang") {
+    await saveStudiengaenge();
+  }
+}
+
+/*
+ * ============================================
+ * STUDENT AKTUALISIEREN
+ * ============================================
+ */
+
 async function updateStudent() {
   if (props.student?.studentId === undefined) {
     return;
@@ -314,6 +515,7 @@ async function updateStudent() {
     });
 
     emit("updated");
+
     close();
   } finally {
     saving.value = false;
@@ -321,14 +523,11 @@ async function updateStudent() {
 }
 
 /*
- * Praktikum speichern.
- *
- * Existiert bereits ein Praktikum:
- * -> PUT
- *
- * Existiert noch keines:
- * -> POST
+ * ============================================
+ * PRAKTIKUM SPEICHERN
+ * ============================================
  */
+
 async function savePraktikum() {
   if (props.student?.studentId === undefined) {
     return;
@@ -339,7 +538,8 @@ async function savePraktikum() {
   /*
    * Datum validieren.
    *
-   * YYYY-MM-DD kann lexikographisch verglichen werden.
+   * YYYY-MM-DD kann hier direkt
+   * miteinander verglichen werden.
    */
   if (
     beginnDatum.value &&
@@ -369,29 +569,19 @@ async function savePraktikum() {
     };
 
     /*
-     * Praktikum existiert bereits.
+     * Praktikum existiert:
+     * -> aktualisieren
      */
     if (praktikum.value) {
-      console.debug(
-        "Praktikum wird aktualisiert:",
-        props.student.studentId,
-        praktikumData
-      );
-
       await praktikumApi.updatePraktikum(
         props.student.studentId,
         praktikumData
       );
     } else {
       /*
-       * Student hat noch kein Praktikum.
+       * Noch kein Praktikum:
+       * -> neu anlegen
        */
-      console.debug(
-        "Praktikum wird neu angelegt:",
-        props.student.studentId,
-        praktikumData
-      );
-
       await praktikumApi.createPraktikum({
         studentId: props.student.studentId,
         ...praktikumData,
@@ -399,6 +589,7 @@ async function savePraktikum() {
     }
 
     emit("updated");
+
     close();
   } finally {
     saving.value = false;
@@ -406,8 +597,53 @@ async function savePraktikum() {
 }
 
 /*
- * Date aus dem API-Modell in YYYY-MM-DD
- * für <input type="date"> umwandeln.
+ * ============================================
+ * STUDIENGÄNGE SPEICHERN
+ * ============================================
+ */
+
+async function saveStudiengaenge() {
+  if (props.student?.studentId === undefined) {
+    return;
+  }
+
+  /*
+   * Der Backend-Endpunkt existiert aktuell
+   * noch nicht.
+   *
+   * Deshalb NICHT so tun, als wären die
+   * Änderungen gespeichert worden.
+   */
+  console.debug("Student:", props.student.studentId);
+
+  console.debug("Zu speichernde Studiengänge:", studiengaenge.value);
+
+  console.warn(
+    "Studiengänge können noch nicht gespeichert werden, " +
+      "da der Backend-Endpunkt noch fehlt."
+  );
+
+  /*
+   * Sobald der Endpoint existiert,
+   * kommt der API-Aufruf hier hinein.
+   *
+   * Danach:
+   *
+   * emit("updated");
+   * close();
+   */
+}
+
+/*
+ * ============================================
+ * HILFSFUNKTIONEN
+ * ============================================
+ */
+
+/*
+ * Date -> YYYY-MM-DD
+ *
+ * Wird für <input type="date"> benötigt.
  */
 function toDateInputValue(value: Date | undefined): string {
   if (!value) {
@@ -423,7 +659,9 @@ function toDateInputValue(value: Date | undefined): string {
 function resetPraktikumFields() {
   beginnDatum.value = "";
   endeDatum.value = "";
+
   wochenarbeitszeit.value = undefined;
+
   benoetigteWochen.value = undefined;
 }
 
@@ -434,6 +672,9 @@ function close() {
   dialog.value = false;
 
   editMode.value = "name";
+
   dateError.value = "";
+
+  newStudiengang.value = "";
 }
 </script>

@@ -1,116 +1,766 @@
 <template>
-  <v-container>
-    <!-- Student -->
-    <div class="mb-6">
-      <h1 class="text-h4">Praktikumsübersicht</h1>
+  <div class="ma-12">
+    <!-- ====================================================== -->
+    <!-- STAMMDATEN -->
+    <!-- ====================================================== -->
 
-      <div
-        v-if="student"
-        class="text-medium-emphasis"
-      >
-        {{ student.vorname }} {{ student.nachname }} {{student.studiengaenge}}
-      </div>
-    </div>
-
-    <!-- Praktikum -->
-    <div v-if="praktikum">
-      <div class="mb-6">
-        <h2 class="text-h5 mb-3">Praktikum</h2>
-
-        <div>
-          Beginn:
-          {{ praktikum.beginnDatum }}
-        </div>
-
-        <div>
-          Ende:
-          {{ praktikum.endeDatum }}
-        </div>
-
-        <div>
-          Wochenarbeitszeit:
-          {{ praktikum.wochenarbeitszeit }} Stunden
-        </div>
-
-        <div>
-          Benötigte Wochen:
-          {{ praktikum.benoetigteWochen }}
-        </div>
-      </div>
-
-      <v-divider class="my-6" />
-
-      <!-- Tätigkeitsblöcke -->
-      <activity-block-list :student-id="studentId" />
-
-      <v-divider class="my-6" />
-
-      <!-- Zeitgutschriften -->
-      <time-credit-list :student-id="studentId" />
-    </div>
-
-    <div
-      v-else
-      class="text-medium-emphasis"
+    <v-card
+      v-if="student"
+      :title="`${student.vorname} ${student.nachname}`"
+      elevation="5"
     >
-      Kein Praktikum vorhanden.
-    </div>
-  </v-container>
+      <v-row>
+        <!-- Praktikum -->
+        <v-col cols="6">
+          <v-card-text>
+            <template v-if="praktikum">
+              Praktikumsstart:
+              {{ formatDate(praktikum.beginnDatum) }}
+
+              <br />
+
+              Praktikumsende:
+              {{ formatDate(praktikum.endeDatum) }}
+
+              <br />
+
+              Benötigte Wochen:
+              {{ praktikum.benoetigteWochen ?? "-" }}
+
+              <br />
+
+              Wochenarbeitszeit:
+              {{ praktikum.wochenarbeitszeit ?? "-" }}
+            </template>
+
+            <v-alert
+              v-else
+              type="info"
+              variant="tonal"
+            >
+              Für diesen Studenten ist noch kein Praktikum angelegt.
+            </v-alert>
+          </v-card-text>
+        </v-col>
+
+        <!-- Studiengänge -->
+        <v-col
+          cols="6"
+          class="border-s"
+        >
+          <v-card-text>
+            <div class="text-h6 mb-2">
+              Studiengänge
+            </div>
+
+            <v-list
+              v-if="student.studiengaenge?.length"
+              density="compact"
+            >
+              <v-list-item
+                v-for="studiengang in student.studiengaenge"
+                :key="studiengang.studiengangNr"
+                :title="studiengang.name"
+              />
+            </v-list>
+
+            <v-alert
+              v-else
+              type="info"
+              variant="tonal"
+            >
+              Für {{ student.vorname }} {{ student.nachname }} sind keine
+              Studiengänge hinterlegt.
+            </v-alert>
+          </v-card-text>
+        </v-col>
+      </v-row>
+    </v-card>
+
+    <!-- ====================================================== -->
+    <!-- KALENDER / ZEITGUTSCHRIFTEN / TÄTIGKEITEN -->
+    <!-- ====================================================== -->
+
+    <v-row class="mt-4">
+      <!-- ==================================================== -->
+      <!-- KALENDER -->
+      <!-- ==================================================== -->
+
+      <v-col cols="4">
+        <v-card elevation="5">
+          <v-card-title>
+            Kalender
+          </v-card-title>
+
+          <v-date-picker
+            v-if="praktikum"
+            v-model="selectedDate"
+            :min="praktikum.beginnDatum"
+            :max="praktikum.endeDatum"
+            :events="calendarEvents"
+            width="100%"
+          />
+
+          <v-card-text v-else>
+            <v-alert
+              type="info"
+              variant="tonal"
+            >
+              Der Kalender steht zur Verfügung, sobald ein Praktikum angelegt
+              wurde.
+            </v-alert>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <!-- ==================================================== -->
+      <!-- ZEITGUTSCHRIFTEN -->
+      <!-- ==================================================== -->
+
+      <v-col cols="4">
+        <v-card elevation="5">
+          <v-card-title class="d-flex justify-space-between align-center">
+            <span>Zeitgutschriften</span>
+
+            <v-btn
+              v-if="canWriteZeitgutschrift"
+              icon
+              variant="text"
+              size="small"
+              :disabled="!selectedDate"
+              @click="openCreateZeitgutschriftDialog"
+            >
+              +
+            </v-btn>
+          </v-card-title>
+
+          <v-card-subtitle v-if="selectedDate">
+            {{ formatDate(selectedDate) }}
+          </v-card-subtitle>
+
+          <!-- Einträge -->
+          <v-list v-if="selectedZeitgutschriften.length">
+            <template
+              v-for="(zeitgutschrift, index) in selectedZeitgutschriften"
+              :key="zeitgutschrift.id"
+            >
+              <v-list-item>
+                <div class="d-flex align-center">
+                  <!-- Grund -->
+                  <div
+                    class="text-truncate"
+                    style="width: 50%"
+                  >
+                    {{ zeitgutschrift.grund }}
+                  </div>
+
+                  <!-- Minuten -->
+                  <div
+                    class="text-center"
+                    style="width: 50%"
+                  >
+                    {{ zeitgutschrift.mengeMinuten }} min
+                  </div>
+                </div>
+
+                <!-- Menü -->
+                <template
+                  v-if="canWriteZeitgutschrift"
+                  #append
+                >
+                  <v-menu>
+                    <template #activator="{ props }">
+                      <v-btn
+                        v-bind="props"
+                        variant="text"
+                        size="small"
+                        @click.prevent.stop
+                      >
+                        ⋮
+                      </v-btn>
+                    </template>
+
+                    <v-list>
+                      <v-list-item
+                        title="Bearbeiten"
+                        @click="openEditZeitgutschriftDialog(zeitgutschrift)"
+                      />
+
+                      <v-list-item
+                        title="Löschen"
+                        @click="deleteZeitgutschrift(zeitgutschrift)"
+                      />
+                    </v-list>
+                  </v-menu>
+                </template>
+              </v-list-item>
+
+              <v-divider
+                v-if="index < selectedZeitgutschriften.length - 1"
+              />
+            </template>
+          </v-list>
+
+          <!-- Keine Einträge -->
+          <v-card-text v-else-if="selectedDate">
+            <v-alert
+              type="info"
+              variant="tonal"
+            >
+              Für den {{ formatDate(selectedDate) }} sind keine
+              Zeitgutschriften vorhanden.
+            </v-alert>
+          </v-card-text>
+
+          <!-- Kein Datum -->
+          <v-card-text v-else>
+            <v-alert
+              type="info"
+              variant="tonal"
+            >
+              Bitte zuerst ein Datum im Kalender auswählen.
+            </v-alert>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <!-- ==================================================== -->
+      <!-- TÄTIGKEITSBLÖCKE -->
+      <!-- ==================================================== -->
+
+      <v-col cols="4">
+        <v-card elevation="5">
+          <v-card-title class="d-flex justify-space-between align-center">
+            <span>Tätigkeitsblöcke</span>
+
+            <v-btn
+              v-if="canWrite"
+              icon
+              variant="text"
+              size="small"
+              :disabled="!selectedDate"
+              @click="openCreateTaetigkeitDialog"
+            >
+              +
+            </v-btn>
+          </v-card-title>
+
+          <v-card-subtitle v-if="selectedDate">
+            {{ formatDate(selectedDate) }}
+          </v-card-subtitle>
+
+          <!-- Einträge -->
+          <v-list v-if="selectedTaetigkeiten.length">
+            <template
+              v-for="(taetigkeit, index) in selectedTaetigkeiten"
+              :key="`${taetigkeit.taetigkeitenblockID?.studentId}-${taetigkeit.taetigkeitenblockID?.tag}-${index}`"
+            >
+              <v-list-item>
+                <div class="d-flex align-center">
+                  <div>
+                    {{ taetigkeit.taetigkeitenblockID?.beginnZeit }}
+                    -
+                    {{ taetigkeit.taetigkeitenblockID?.endeZeit }}
+                  </div>
+
+                  <div class="flex-grow-1 text-center">
+                    {{ taetigkeit.homeoffice ? "HO" : "Office" }}
+                  </div>
+                </div>
+
+                <template
+                  v-if="canWrite"
+                  #append
+                >
+                  <v-menu>
+                    <template #activator="{ props }">
+                      <v-btn
+                        v-bind="props"
+                        variant="text"
+                        size="small"
+                        @click.prevent.stop
+                      >
+                        ⋮
+                      </v-btn>
+                    </template>
+
+                    <v-list>
+                      <v-list-item title="Bearbeiten" />
+                      <v-list-item title="Löschen" />
+                    </v-list>
+                  </v-menu>
+                </template>
+              </v-list-item>
+
+              <v-divider
+                v-if="index < selectedTaetigkeiten.length - 1"
+              />
+            </template>
+          </v-list>
+
+          <!-- Keine Einträge -->
+          <v-card-text v-else-if="selectedDate">
+            <v-alert
+              type="info"
+              variant="tonal"
+            >
+              Für den {{ formatDate(selectedDate) }} sind keine Tätigkeitsblöcke
+              vorhanden.
+            </v-alert>
+          </v-card-text>
+
+          <!-- Kein Datum -->
+          <v-card-text v-else>
+            <v-alert
+              type="info"
+              variant="tonal"
+            >
+              Bitte zuerst ein Datum im Kalender auswählen.
+            </v-alert>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- ====================================================== -->
+    <!-- DIALOGE -->
+    <!-- ====================================================== -->
+
+    <!-- CREATE -->
+    <CreateTimeCreditDialog
+      v-model="createZeitgutschriftDialog"
+      :student-id="studentId"
+      :selected-date="selectedDate"
+      @created="loadPraktikum"
+    />
+
+    <!-- EDIT -->
+    <EditTimeCreditDialog
+      v-model="editZeitgutschriftDialog"
+      :student-id="studentId"
+      :zeitgutschrift="zeitgutschriftToEdit"
+      @updated="loadPraktikum"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
-import type { PraktikumDTO, StudentDTO } from "@/api/generated/api-spec";
+import type {
+  FullPraktikumDTO,
+  StudentDTO,
+} from "@/api/generated/api-spec";
 
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 
 import { ApiFactory } from "@/api/ApiFactory";
+
 import {
   PraktikumControllerApi,
   StudentControllerApi,
+  ZeitgutschriftControllerApi,
 } from "@/api/generated/api-spec";
-import ActivityBlockList from "@/components/praktikum/ActivityBlockList.vue";
-import TimeCreditList from "@/components/praktikum/TimeCreditList.vue";
+
+import CreateTimeCreditDialog from "@/components/praktikum/CreateTimeCreditDialog.vue";
+import EditTimeCreditDialog from "@/components/praktikum/EditTimeCreditDialog.vue";
+
+import useHasAnyRole from "@/composables/useHasAnyRole";
+import { Role } from "@/types/Role";
 
 /*
- * Route /student/{id}
+ * ============================================================
+ * TYPEN
+ * ============================================================
  */
+
+/*
+ * Wir verwenden exakt den Elementtyp aus FullPraktikumDTO.
+ * Dadurch müssen wir den Namen des generierten
+ * Zeitgutschrift-DTOs nicht kennen.
+ */
+type Zeitgutschrift =
+  NonNullable<FullPraktikumDTO["zeitgutschriften"]>[number];
+
+/*
+ * ============================================================
+ * ROUTE
+ * ============================================================
+ */
+
 const route = useRoute("/student/[id]");
+
 const studentId = Number(route.params.id);
 
 /*
- * APIs
+ * ============================================================
+ * API
+ * ============================================================
  */
-const studentApi = ApiFactory.getInstance(StudentControllerApi);
-const praktikumApi = ApiFactory.getInstance(PraktikumControllerApi);
+
+const studentApi =
+  ApiFactory.getInstance(StudentControllerApi);
+
+const praktikumApi =
+  ApiFactory.getInstance(PraktikumControllerApi);
+
+const zeitgutschriftApi =
+  ApiFactory.getInstance(ZeitgutschriftControllerApi);
 
 /*
- * Daten
+ * ============================================================
+ * BERECHTIGUNGEN
+ * ============================================================
  */
+
+const canWrite =
+  useHasAnyRole(Role.WRITER);
+
+const canWriteZeitgutschrift =
+  useHasAnyRole([
+    Role.ZEITGUTSCHRIFT_WRITER,
+    Role.WRITER,
+  ]);
+
+/*
+ * ============================================================
+ * STATE
+ * ============================================================
+ */
+
 const student = ref<StudentDTO>();
-const praktikum = ref<PraktikumDTO>();
+
+const praktikum = ref<FullPraktikumDTO>();
+
+const selectedDate = ref<Date>();
 
 /*
- * Student laden
+ * Dialoge
  */
+const createZeitgutschriftDialog = ref(false);
+
+const editZeitgutschriftDialog = ref(false);
+
+/*
+ * Die Zeitgutschrift, die gerade bearbeitet wird.
+ */
+const zeitgutschriftToEdit =
+  ref<Zeitgutschrift>();
+
+/*
+ * ============================================================
+ * LADEN
+ * ============================================================
+ */
+
 async function loadStudent() {
-  student.value = await studentApi.getStudent(studentId);
+  student.value =
+    await studentApi.getStudent(studentId);
 }
 
-/*
- * Praktikum laden
- *
- * Student und Praktikum haben eine 1:1-Beziehung.
- * Das Praktikum wird deshalb über die Student-ID geladen.
- */
 async function loadPraktikum() {
-  praktikum.value = await praktikumApi.getPraktikum(studentId);
+  try {
+    const loadedPraktikum =
+      await praktikumApi.getPraktikum(studentId);
+
+    praktikum.value = loadedPraktikum;
+
+    /*
+     * Nur beim ersten Laden den Praktikumsbeginn auswählen.
+     *
+     * Nach POST / PUT / DELETE wird loadPraktikum()
+     * erneut aufgerufen. Das ausgewählte Datum soll dabei
+     * erhalten bleiben.
+     */
+    if (
+      !selectedDate.value &&
+      loadedPraktikum.beginnDatum
+    ) {
+      selectedDate.value =
+        loadedPraktikum.beginnDatum;
+    }
+  } catch (error) {
+    console.debug(
+      "Kein Praktikum vorhanden:",
+      studentId,
+      error
+    );
+
+    praktikum.value = undefined;
+
+    selectedDate.value = undefined;
+  }
 }
 
 /*
- * Seite laden
+ * ============================================================
+ * DATUM
+ * ============================================================
  */
+
+/*
+ * Date -> YYYY-MM-DD
+ *
+ * Kein toISOString(), da wir hier keine
+ * UTC-Konvertierung wollen.
+ */
+function toDateKey(date: Date): string {
+  const year = date.getFullYear();
+
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
+
+  const day = String(
+    date.getDate()
+  ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+/*
+ * Datum für die Oberfläche.
+ */
+function formatDate(
+  date: Date | undefined
+): string {
+  return date?.toLocaleDateString("de-DE") ?? "-";
+}
+
+/*
+ * ============================================================
+ * KALENDER-EVENTS
+ * ============================================================
+ *
+ * schwarz = mindestens ein Tätigkeitsblock
+ * gelb    = mindestens eine Zeitgutschrift
+ */
+
+function calendarEvents(
+  date: string
+): string[] | false {
+  if (!praktikum.value) {
+    return false;
+  }
+
+  const colors: string[] = [];
+
+  const hasTaetigkeit =
+    praktikum.value.taetigkeiten?.some(
+      (taetigkeit) => {
+        const tag =
+          taetigkeit.taetigkeitenblockID?.tag;
+
+        return (
+          tag !== undefined &&
+          toDateKey(tag) === date
+        );
+      }
+    ) ?? false;
+
+  const hasZeitgutschrift =
+    praktikum.value.zeitgutschriften?.some(
+      (zeitgutschrift) => {
+        const tag =
+          zeitgutschrift.tag;
+
+        return (
+          tag !== undefined &&
+          toDateKey(tag) === date
+        );
+      }
+    ) ?? false;
+
+  if (hasTaetigkeit) {
+    colors.push("black");
+  }
+
+  if (hasZeitgutschrift) {
+    colors.push("yellow");
+  }
+
+  return colors.length
+    ? colors
+    : false;
+}
+
+/*
+ * ============================================================
+ * AUSGEWÄHLTE TÄTIGKEITSBLÖCKE
+ * ============================================================
+ */
+
+const selectedTaetigkeiten = computed(() => {
+  if (
+    !praktikum.value ||
+    !selectedDate.value
+  ) {
+    return [];
+  }
+
+  const selectedDateKey =
+    toDateKey(selectedDate.value);
+
+  return (
+    praktikum.value.taetigkeiten?.filter(
+      (taetigkeit) => {
+        const tag =
+          taetigkeit.taetigkeitenblockID?.tag;
+
+        return (
+          tag !== undefined &&
+          toDateKey(tag) === selectedDateKey
+        );
+      }
+    ) ?? []
+  );
+});
+
+/*
+ * ============================================================
+ * AUSGEWÄHLTE ZEITGUTSCHRIFTEN
+ * ============================================================
+ */
+
+const selectedZeitgutschriften = computed(() => {
+  if (
+    !praktikum.value ||
+    !selectedDate.value
+  ) {
+    return [];
+  }
+
+  const selectedDateKey =
+    toDateKey(selectedDate.value);
+
+  return (
+    praktikum.value.zeitgutschriften?.filter(
+      (zeitgutschrift) => {
+        const tag =
+          zeitgutschrift.tag;
+
+        return (
+          tag !== undefined &&
+          toDateKey(tag) === selectedDateKey
+        );
+      }
+    ) ?? []
+  );
+});
+
+/*
+ * ============================================================
+ * CREATE ZEITGUTSCHRIFT
+ * ============================================================
+ */
+
+function openCreateZeitgutschriftDialog() {
+  if (
+    !canWriteZeitgutschrift.value ||
+    !selectedDate.value
+  ) {
+    return;
+  }
+
+  createZeitgutschriftDialog.value = true;
+}
+
+/*
+ * ============================================================
+ * EDIT ZEITGUTSCHRIFT
+ * ============================================================
+ */
+
+function openEditZeitgutschriftDialog(
+  zeitgutschrift: Zeitgutschrift
+) {
+  if (!canWriteZeitgutschrift.value) {
+    return;
+  }
+
+  /*
+   * Gewählten Datensatz merken.
+   */
+  zeitgutschriftToEdit.value =
+    zeitgutschrift;
+
+  /*
+   * Edit-Dialog öffnen.
+   */
+  editZeitgutschriftDialog.value =
+    true;
+}
+
+/*
+ * ============================================================
+ * DELETE ZEITGUTSCHRIFT
+ * ============================================================
+ */
+
+async function deleteZeitgutschrift(
+  zeitgutschrift: Zeitgutschrift
+) {
+  if (!canWriteZeitgutschrift.value) {
+    return;
+  }
+
+  if (zeitgutschrift.id === undefined) {
+    console.error(
+      "Zeitgutschrift kann nicht gelöscht werden: ID fehlt.",
+      zeitgutschrift
+    );
+
+    return;
+  }
+
+  await zeitgutschriftApi.deleteZeitgutschrift(
+    zeitgutschrift.id
+  );
+
+  /*
+   * Danach Praktikum neu laden.
+   *
+   * Dadurch verschwinden:
+   * - der Eintrag aus der Liste
+   * - gegebenenfalls der gelbe Punkt im Kalender
+   */
+  await loadPraktikum();
+}
+
+/*
+ * ============================================================
+ * TÄTIGKEITSBLOCK
+ * ============================================================
+ */
+
+function openCreateTaetigkeitDialog() {
+  if (
+    !canWrite.value ||
+    !selectedDate.value
+  ) {
+    return;
+  }
+
+  console.debug(
+    "Tätigkeitsblock anlegen für:",
+    selectedDate.value
+  );
+
+  /*
+   * TODO:
+   * Tätigkeitsblock-Dialog ergänzen.
+   */
+}
+
+/*
+ * ============================================================
+ * INITIALISIERUNG
+ * ============================================================
+ */
+
 onMounted(async () => {
-  await Promise.all([loadStudent(), loadPraktikum()]);
+  await Promise.all([
+    loadStudent(),
+    loadPraktikum(),
+  ]);
 });
 </script>

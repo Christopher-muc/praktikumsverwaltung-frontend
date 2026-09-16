@@ -45,13 +45,6 @@ declare module 'vue-router/auto-routes' {
       { id: ParamValue<false> },
       | never
     >,
-    '/uebung': RouteRecordInfo<
-      '/uebung',
-      '/uebung',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
   }
 
   /**
@@ -80,14 +73,6 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'id'
-    }
-    'src/routes/uebung.vue': {
-      routes:
-        | '/uebung'
-      views:
-        | never
-      pathParamNames:
-        | never
     }
   }
 
