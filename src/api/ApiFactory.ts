@@ -1,5 +1,5 @@
 import { getSecurityHeaders } from "@/api/fetch-utils.ts";
-import { BaseAPI, Configuration } from "@/api/generated/refarch-backend";
+import { BaseAPI, Configuration } from "@/api/generated/api-spec";
 import { BASE_API_PATH } from "@/constants.ts";
 
 type ApiCtor<T extends BaseAPI> = new (config: Configuration) => T;

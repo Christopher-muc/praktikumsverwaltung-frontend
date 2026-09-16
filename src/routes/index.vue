@@ -1,13 +1,13 @@
 <template>
   <v-container>
-    <!-- Überschrift + Student hinzufügen -->
+    <!-- Überschrift -->
     <div class="d-flex justify-space-between align-center mb-4">
       <h1 class="text-h4">Studenten</h1>
 
       <v-btn
-          v-if="canWrite"
-          variant="outlined"
-          @click="openDialog"
+        v-if="canWrite"
+        variant="outlined"
+        @click="createDialog = true"
       >
         Student hinzufügen
       </v-btn>
@@ -16,328 +16,151 @@
     <!-- Studentenliste -->
     <v-list>
       <template
-          v-for="(student, index) in filteredStudents"
-          :key="student.id"
+        v-for="(student, index) in filteredStudents"
+        :key="student.studentId"
       >
         <v-list-item
-            :title="`${student.firstName} ${student.lastName}`"
-            :to="`/student/${student.id}`"
-        />
+          :title="`${student.vorname} ${student.nachname}`"
+          :to="`/student/${student.studentId}`"
+        >
+          <!-- Aktionen nur für WRITER -->
+          <template
+            v-if="canWrite"
+            #append
+          >
+            <v-menu>
+              <template #activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  variant="text"
+                  size="small"
+                  @click.prevent.stop
+                >
+                  ⋮
+                </v-btn>
+              </template>
 
-        <v-divider
-            v-if="index < filteredStudents.length - 1"
-        />
+              <v-list>
+                <v-list-item
+                  title="Bearbeiten"
+                  @click="openEditDialog(student)"
+                />
+
+                <v-list-item
+                  title="Löschen"
+                  @click="openDeleteDialog(student)"
+                />
+              </v-list>
+            </v-menu>
+          </template>
+        </v-list-item>
+
+        <v-divider v-if="index < filteredStudents.length - 1" />
       </template>
     </v-list>
 
-    <!-- Meldung, wenn nichts gefunden wurde -->
+    <!-- Keine Studenten gefunden -->
     <div
-        v-if="filteredStudents.length === 0"
-        class="text-medium-emphasis pa-4"
+      v-if="filteredStudents.length === 0"
+      class="text-medium-emphasis pa-4"
     >
       Keine Studenten gefunden.
     </div>
 
-    <!-- Student hinzufügen Dialog -->
-    <v-dialog
-        v-model="dialog"
-        max-width="650"
-        persistent
-    >
-      <v-card rounded="xl">
-        <!-- Titel -->
-        <v-card-title class="d-flex align-center pa-6 pb-2">
-          Student hinzufügen
-        </v-card-title>
+    <!-- Dialoge -->
+    <StudentCreateDialog
+      v-model="createDialog"
+      @created="loadStudents"
+    />
 
-        <v-card-text class="pa-6 pt-3">
-          <v-stepper
-              v-model="step"
-              :items="['Student', 'Praktikum']"
-              hide-actions
-              flat
-          >
-            <!-- Schritt 1: Student -->
-            <template #item.1>
-              <v-form
-                  ref="studentForm"
-                  class="pt-3"
-                  @submit.prevent="nextStep"
-              >
-                <v-text-field
-                    v-model="newStudent.firstName"
-                    label="Vorname"
-                    variant="outlined"
-                    :rules="[required]"
-                    class="mb-2"
-                    autofocus
-                />
+    <StudentEditDialog
+      v-model="editDialog"
+      :student="selectedStudent"
+      @updated="loadStudents"
+    />
 
-                <v-text-field
-                    v-model="newStudent.lastName"
-                    label="Nachname"
-                    variant="outlined"
-                    :rules="[required]"
-                    class="mb-2"
-                />
-
-                <div class="d-flex justify-space-between mt-4">
-                  <v-btn
-                      variant="text"
-                      @click="closeDialog"
-                  >
-                    Abbrechen
-                  </v-btn>
-
-                  <v-btn
-                      color="primary"
-                      type="submit"
-                  >
-                    Weiter
-                  </v-btn>
-                </div>
-              </v-form>
-            </template>
-
-            <!-- Schritt 2: Praktikum -->
-            <template #item.2>
-              <v-form @submit.prevent="createStudent">
-                <v-text-field
-                    v-model.number="newStudent.targetHours"
-                    label="Sollzeit pro Woche"
-                    type="number"
-                    variant="outlined"
-                    suffix="h"
-                    min="0"
-                    class="mb-2"
-                />
-
-                <v-text-field
-                    v-model.number="newStudent.requiredWeeks"
-                    label="Benötigte Wochen"
-                    type="number"
-                    variant="outlined"
-                    min="0"
-                    class="mb-2"
-                />
-
-                <v-text-field
-                    v-model="newStudent.startDate"
-                    label="Beginn"
-                    type="date"
-                    variant="outlined"
-                    class="mb-2"
-                />
-
-                <v-text-field
-                    v-model="newStudent.endDate"
-                    label="Ende"
-                    type="date"
-                    variant="outlined"
-                />
-
-                <div class="d-flex justify-space-between mt-4">
-                  <v-btn
-                      variant="text"
-                      @click="step = 1"
-                  >
-                    Zurück
-                  </v-btn>
-
-                  <div class="d-flex ga-2">
-                    <v-btn
-                        variant="text"
-                        @click="closeDialog"
-                    >
-                      Abbrechen
-                    </v-btn>
-
-                    <v-btn
-                        color="primary"
-                        type="submit"
-                    >
-                      Student anlegen
-                    </v-btn>
-                  </div>
-                </div>
-              </v-form>
-            </template>
-          </v-stepper>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
+    <StudentDeleteDialog
+      v-model="deleteDialog"
+      :student="selectedStudent"
+      @deleted="loadStudents"
+    />
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from "vue";
+import type { SimpleStudentDTO } from "@/api/generated/api-spec";
+
+import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 
+import { ApiFactory } from "@/api/ApiFactory";
+import { StudentControllerApi } from "@/api/generated/api-spec";
+import StudentCreateDialog from "@/components/student/StudentCreateDialog.vue";
+import StudentDeleteDialog from "@/components/student/StudentDeleteDialog.vue";
+import StudentEditDialog from "@/components/student/StudentEditDialog.vue";
 import useHasAnyRole from "@/composables/useHasAnyRole";
 import { Role } from "@/types/Role";
 
 const route = useRoute();
 
+/*
+ * Rollen
+ */
 const canWrite = useHasAnyRole(Role.WRITER);
 
-const dialog = ref(false);
-const step = ref(1);
+/*
+ * API
+ */
+const studentApi = ApiFactory.getInstance(StudentControllerApi);
 
-const studentForm = ref();
+/*
+ * Studentenliste
+ */
+const students = ref<SimpleStudentDTO[]>([]);
 
-const students = ref([
-  {
-    id: 1,
-    firstName: "Max",
-    lastName: "Mustermann",
-  },
-  {
-    id: 2,
-    firstName: "Anna",
-    lastName: "Musterfrau",
-  },
-  {
-    id: 3,
-    firstName: "Peter",
-    lastName: "Beispiel",
-  },
-]);
+async function loadStudents() {
+  students.value = await studentApi.getAllStudents();
+}
 
-/**
- * Studenten anhand des Suchbegriffs aus der App-Bar filtern.
- *
- * Beispiel:
- * /?search=max
+onMounted(async () => {
+  await loadStudents();
+});
+
+/*
+ * Suche
  */
 const filteredStudents = computed(() => {
   const search = String(route.query.search ?? "")
-      .trim()
-      .toLowerCase();
+    .trim()
+    .toLowerCase();
 
   if (!search) {
     return students.value;
   }
 
   return students.value.filter((student) => {
-    const fullName = `${student.firstName} ${student.lastName}`.toLowerCase();
+    const fullName = `${student.vorname} ${student.nachname}`.toLowerCase();
 
     return fullName.includes(search);
   });
 });
 
-const newStudent = reactive({
-  firstName: "",
-  lastName: "",
-  targetHours: undefined as number | undefined,
-  requiredWeeks: undefined as number | undefined,
-  startDate: "",
-  endDate: "",
-});
-
-/**
- * Pflichtfeld-Validierung
+/*
+ * Dialoge
  */
-const required = (value: string) =>
-    !!value?.trim() || "Dieses Feld ist erforderlich";
+const createDialog = ref(false);
+const editDialog = ref(false);
+const deleteDialog = ref(false);
 
-/**
- * Dialog öffnen
- */
-function openDialog() {
-  if (!canWrite.value) {
-    return;
-  }
+const selectedStudent = ref<SimpleStudentDTO | null>(null);
 
-  resetForm();
-  dialog.value = true;
+function openEditDialog(student: SimpleStudentDTO) {
+  selectedStudent.value = student;
+  editDialog.value = true;
 }
 
-/**
- * Prüft Vorname + Nachname und wechselt
- * zum Praktikums-Schritt.
- */
-async function nextStep() {
-  const result = await studentForm.value?.validate();
-
-  if (!result?.valid) {
-    return;
-  }
-
-  step.value = 2;
-}
-
-/**
- * Student anlegen
- */
-async function createStudent() {
-  if (!canWrite.value) {
-    return;
-  }
-
-  console.debug("Student:", {
-    firstName: newStudent.firstName,
-    lastName: newStudent.lastName,
-  });
-
-  console.debug("Praktikum:", {
-    targetHours: newStudent.targetHours,
-    requiredWeeks: newStudent.requiredWeeks,
-    startDate: newStudent.startDate,
-    endDate: newStudent.endDate,
-  });
-
-  /*
-   * Später:
-   *
-   * 1. POST /student/
-   *
-   * const createdStudent = await studentApi.createStudent({
-   *   firstName: newStudent.firstName,
-   *   lastName: newStudent.lastName,
-   * });
-   *
-   * 2. Praktikum mit createdStudent.id anlegen
-   *
-   * await praktikumApi.createPraktikum({
-   *   studentId: createdStudent.id,
-   *   targetHours: newStudent.targetHours,
-   *   requiredWeeks: newStudent.requiredWeeks,
-   *   startDate: newStudent.startDate,
-   *   endDate: newStudent.endDate,
-   * });
-   */
-
-  // Mock, solange Backend noch nicht angeschlossen ist
-  students.value.push({
-    id: Date.now(),
-    firstName: newStudent.firstName,
-    lastName: newStudent.lastName,
-  });
-
-  closeDialog();
-}
-
-/**
- * Dialog schließen
- */
-function closeDialog() {
-  dialog.value = false;
-  resetForm();
-}
-
-/**
- * Formular zurücksetzen
- */
-function resetForm() {
-  step.value = 1;
-
-  newStudent.firstName = "";
-  newStudent.lastName = "";
-  newStudent.targetHours = undefined;
-  newStudent.requiredWeeks = undefined;
-  newStudent.startDate = "";
-  newStudent.endDate = "";
-
-  studentForm.value?.resetValidation();
+function openDeleteDialog(student: SimpleStudentDTO) {
+  selectedStudent.value = student;
+  deleteDialog.value = true;
 }
 </script>

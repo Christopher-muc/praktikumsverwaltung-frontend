@@ -38,18 +38,18 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/get-started': RouteRecordInfo<
-      '/get-started',
-      '/get-started',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
     '/student/[id]': RouteRecordInfo<
       '/student/[id]',
       '/student/:id',
       { id: ParamValue<true> },
       { id: ParamValue<false> },
+      | never
+    >,
+    '/uebung': RouteRecordInfo<
+      '/uebung',
+      '/uebung',
+      Record<never, never>,
+      Record<never, never>,
       | never
     >,
   }
@@ -73,14 +73,6 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
-    'src/routes/get-started.vue': {
-      routes:
-        | '/get-started'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
     'src/routes/student/%5Bid%5D.vue': {
       routes:
         | '/student/[id]'
@@ -88,6 +80,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'id'
+    }
+    'src/routes/uebung.vue': {
+      routes:
+        | '/uebung'
+      views:
+        | never
+      pathParamNames:
+        | never
     }
   }
 
