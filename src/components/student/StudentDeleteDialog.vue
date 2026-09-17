@@ -54,11 +54,17 @@ const emit = defineEmits<{
 const studentApi = ApiFactory.getInstance(StudentControllerApi);
 
 async function deleteStudent() {
+  console.log("Student beim Löschen:", props.student);
+  console.log("Student-ID:", props.student?.studentId);
+
   if (props.student?.studentId === undefined) {
+    console.error("Keine studentId vorhanden");
     return;
   }
 
   await studentApi.deleteStudent(props.student.studentId);
+
+  console.log("Student gelöscht");
 
   emit("deleted");
 
@@ -69,4 +75,3 @@ function close() {
   dialog.value = false;
 }
 </script>
-
