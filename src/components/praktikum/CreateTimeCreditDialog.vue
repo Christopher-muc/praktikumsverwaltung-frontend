@@ -12,7 +12,6 @@
           ref="form"
           @submit.prevent="createZeitgutschrift"
         >
-          <!-- Datum nur anzeigen -->
           <v-text-field
             :model-value="formattedDate"
             label="Datum"
@@ -22,7 +21,7 @@
           />
 
           <v-text-field
-            v-model.number="mengeMinuten"
+            v-model.number="minuten"
             label="Minuten"
             type="number"
             variant="outlined"
@@ -39,6 +38,13 @@
             :rules="[required]"
             class="mb-2"
           />
+
+          <div
+            v-if="error"
+            class="text-error mt-2"
+          >
+            {{ error }}
+          </div>
 
           <div class="d-flex justify-end ga-2 mt-4">
             <v-btn
@@ -64,51 +70,36 @@
 </template>
 
 <script setup lang="ts">
+import type { ZeitgutschriftRequestDTO } from "@/api/generated/api-spec/models";
+
 import { computed, ref } from "vue";
 
 import { ApiFactory } from "@/api/ApiFactory";
 import { ZeitgutschriftControllerApi } from "@/api/generated/api-spec";
 
-/*
- * Dialog
- */
 const dialog = defineModel<boolean>({
   default: false,
 });
 
-/*
- * Daten kommen aus [id].vue
- */
 const props = defineProps<{
   studentId: number;
-  selectedDate: Date | undefined;
+  selectedDate?: Date;
 }>();
 
-/*
- * Parent nach erfolgreichem Erstellen informieren
- */
 const emit = defineEmits<{
   created: [];
 }>();
 
-/*
- * API
- */
 const zeitgutschriftApi = ApiFactory.getInstance(ZeitgutschriftControllerApi);
 
-/*
- * Formular
- */
 const form = ref();
 
-const mengeMinuten = ref<number>();
+const minuten = ref<number>();
 const grund = ref("");
 
 const saving = ref(false);
+const error = ref("");
 
-/*
- * Datum für die Anzeige
- */
 const formattedDate = computed(() => {
   if (!props.selectedDate) {
     return "";
@@ -117,25 +108,15 @@ const formattedDate = computed(() => {
   return props.selectedDate.toLocaleDateString("de-DE");
 });
 
-/*
- * Date -> YYYY-MM-DD vermeiden wir hier bewusst:
- * Der generierte API-Client erwartet bei OpenAPI format: date
- * normalerweise ein Date-Objekt.
- */
-
-/*
- * Validierung
- */
 const required = (value: string) =>
   !!value?.trim() || "Dieses Feld ist erforderlich";
 
 const requiredMinutes = (value: number | undefined) =>
   (value !== undefined && value > 0) || "Die Minuten müssen größer als 0 sein.";
 
-/*
- * Zeitgutschrift erstellen
- */
 async function createZeitgutschrift() {
+  error.value = "";
+
   const result = await form.value?.validate();
 
   if (!result?.valid) {
@@ -143,42 +124,42 @@ async function createZeitgutschrift() {
   }
 
   if (!props.selectedDate) {
+    error.value = "Es wurde kein Datum ausgewählt.";
     return;
   }
 
   saving.value = true;
 
   try {
-    await zeitgutschriftApi.createZeitgutschrift({
-      tag: props.selectedDate,
-      mengeMinuten: mengeMinuten.value!,
+    const request: ZeitgutschriftRequestDTO = {
+      studentId: props.studentId,
+      datum: props.selectedDate,
+      minuten: minuten.value!,
       grund: grund.value.trim(),
-      praktikumID: props.studentId,
-    });
+    };
+
+    await zeitgutschriftApi.createZeitgutschrift(request);
 
     emit("created");
-
     close();
+  } catch (e) {
+    console.debug("Zeitgutschrift konnte nicht erstellt werden:", e);
+
+    error.value = "Die Zeitgutschrift konnte nicht erstellt werden.";
   } finally {
     saving.value = false;
   }
 }
 
-/*
- * Dialog schließen
- */
 function close() {
   dialog.value = false;
-
   resetForm();
 }
 
-/*
- * Formular zurücksetzen
- */
 function resetForm() {
-  mengeMinuten.value = undefined;
+  minuten.value = undefined;
   grund.value = "";
+  error.value = "";
 
   form.value?.resetValidation();
 }

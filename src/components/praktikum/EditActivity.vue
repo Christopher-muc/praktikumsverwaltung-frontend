@@ -12,44 +12,44 @@
       <v-card-text class="pa-6">
         <v-form @submit.prevent="save">
           <v-text-field
-            v-model="tag"
-            label="Tag"
+            v-model="beschreibung"
+            label="Beschreibung"
+            variant="outlined"
+            class="mb-2"
+          />
+
+          <v-text-field
+            v-model="beginnDatum"
+            label="Beginn"
             type="date"
             variant="outlined"
             class="mb-2"
           />
 
           <v-text-field
-            v-model="beginnZeit"
-            label="Beginn"
-            type="time"
+            v-model="endDatum"
+            label="Ende"
+            type="date"
             variant="outlined"
             class="mb-2"
           />
 
           <v-text-field
-            v-model="endeZeit"
-            label="Ende"
-            type="time"
+            v-model.number="stundenanzahl"
+            label="Stundenanzahl"
+            type="number"
             variant="outlined"
+            suffix="h"
+            min="1"
             class="mb-2"
           />
 
-          <v-switch
-            v-model="homeoffice"
-            label="Homeoffice"
-            color="primary"
-            hide-details
-          />
-
-          <v-alert
-            v-if="timeError"
-            type="error"
-            variant="tonal"
-            class="mt-4"
+          <div
+            v-if="error"
+            class="text-error mt-2"
           >
-            {{ timeError }}
-          </v-alert>
+            {{ error }}
+          </div>
 
           <div class="d-flex justify-end ga-2 mt-6">
             <v-btn
@@ -75,61 +75,40 @@
 </template>
 
 <script setup lang="ts">
+import type {
+  TaetigkeitenblockRequestDTO,
+  TaetigkeitenblockResponseDTO,
+} from "@/api/generated/api-spec/models";
+
 import { ref, watch } from "vue";
 
-/*
- * Temporärer GUI-Typ.
- *
- * Kann später durch den generierten DTO-Typ
- * aus der OpenAPI ersetzt werden.
- */
-interface Activity {
-  studentId?: number;
-  tag?: Date;
-  beginnZeit?: string;
-  endeZeit?: string;
-  homeoffice?: boolean;
-}
+import { ApiFactory } from "@/api/ApiFactory";
+import { TaetigkeitenblockControllerApi } from "@/api/generated/api-spec/apis";
 
-/*
- * Dialog
- */
 const dialog = defineModel<boolean>({
   default: false,
 });
 
-/*
- * Props
- */
 const props = defineProps<{
-  activity: Activity | null;
+  activity: TaetigkeitenblockResponseDTO | null;
 }>();
 
-/*
- * Events
- */
 const emit = defineEmits<{
   updated: [];
 }>();
 
-/*
- * Formulardaten
- */
-const tag = ref("");
-const beginnZeit = ref("");
-const endeZeit = ref("");
-const homeoffice = ref(false);
+const taetigkeitenblockApi = ApiFactory.getInstance(
+  TaetigkeitenblockControllerApi
+);
 
-/*
- * Status
- */
+const beschreibung = ref("");
+const beginnDatum = ref("");
+const endDatum = ref("");
+const stundenanzahl = ref<number>();
+
 const saving = ref(false);
-const timeError = ref("");
+const error = ref("");
 
-/*
- * Sobald eine Tätigkeit zum Bearbeiten
- * übergeben wird, Formular befüllen.
- */
 watch(
   () => props.activity,
   (activity) => {
@@ -137,70 +116,78 @@ watch(
       return;
     }
 
-    tag.value = activity.tag
-      ? toDateKey(activity.tag)
+    beschreibung.value = activity.beschreibung ?? "";
+
+    beginnDatum.value = activity.beginnDatum
+      ? toDateKey(activity.beginnDatum)
       : "";
 
-    beginnZeit.value = activity.beginnZeit ?? "";
-    endeZeit.value = activity.endeZeit ?? "";
-    homeoffice.value = activity.homeoffice ?? false;
+    endDatum.value = activity.endDatum ? toDateKey(activity.endDatum) : "";
 
-    timeError.value = "";
+    stundenanzahl.value = activity.stundenanzahl;
+
+    error.value = "";
   },
   {
     immediate: true,
   }
 );
 
-/*
- * Änderungen speichern
- */
 async function save() {
-  timeError.value = "";
+  error.value = "";
 
-  if (
-    beginnZeit.value &&
-    endeZeit.value &&
-    endeZeit.value <= beginnZeit.value
-  ) {
-    timeError.value = "Das Ende muss nach dem Beginn liegen.";
+  if (props.activity?.taetigkeitenblockId === undefined) {
+    error.value = "Tätigkeitsblock besitzt keine ID.";
+    return;
+  }
+
+  if (!beschreibung.value.trim()) {
+    error.value = "Bitte eine Beschreibung eingeben.";
+    return;
+  }
+
+  if (!beginnDatum.value || !endDatum.value) {
+    error.value = "Bitte Beginn und Ende angeben.";
+    return;
+  }
+
+  if (endDatum.value < beginnDatum.value) {
+    error.value = "Das Enddatum darf nicht vor dem Beginn liegen.";
+    return;
+  }
+
+  if (stundenanzahl.value === undefined || stundenanzahl.value <= 0) {
+    error.value = "Die Stundenanzahl muss größer als 0 sein.";
     return;
   }
 
   saving.value = true;
 
   try {
-    /*
-     * Später Backend-Aufruf einsetzen.
-     */
-    const activityData = {
-      studentId: props.activity?.studentId,
-      tag: tag.value
-        ? new Date(`${tag.value}T00:00:00`)
-        : undefined,
-      beginnZeit: beginnZeit.value,
-      endeZeit: endeZeit.value,
-      homeoffice: homeoffice.value,
+    const request: TaetigkeitenblockRequestDTO = {
+      studentId: props.activity.studentId,
+      beschreibung: beschreibung.value.trim(),
+      beginnDatum: new Date(`${beginnDatum.value}T00:00:00`),
+      endDatum: new Date(`${endDatum.value}T00:00:00`),
+      stundenanzahl: stundenanzahl.value,
     };
 
-    console.debug("Tätigkeitsblock aktualisieren:", activityData);
-
-    /*
-     * Später z. B.:
-     *
-     * await taetigkeitApi.updateTaetigkeit(...)
-     */
+    await taetigkeitenblockApi.updateTaetigkeitenblock(
+      props.activity.taetigkeitenblockId,
+      request
+    );
 
     emit("updated");
     close();
+  } catch (e) {
+    console.debug("Tätigkeitsblock konnte nicht aktualisiert werden:", e);
+
+    error.value = "Der Tätigkeitsblock konnte nicht gespeichert werden.";
   } finally {
     saving.value = false;
   }
 }
 
-/*
- * Date -> YYYY-MM-DD
- */
 function toDateKey(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -209,11 +196,8 @@ function toDateKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-/*
- * Dialog schließen
- */
 function close() {
   dialog.value = false;
-  timeError.value = "";
+  error.value = "";
 }
 </script>

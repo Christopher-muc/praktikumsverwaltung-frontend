@@ -5,9 +5,7 @@
     persistent
   >
     <v-card rounded="xl">
-      <v-card-title class="pa-6 pb-2">
-        Zeitgutschrift bearbeiten
-      </v-card-title>
+      <v-card-title class="pa-6 pb-2"> Zeitgutschrift bearbeiten </v-card-title>
 
       <v-card-text class="pa-6 pt-3">
         <v-form
@@ -23,7 +21,7 @@
           />
 
           <v-text-field
-            v-model.number="mengeMinuten"
+            v-model.number="minuten"
             label="Minuten"
             type="number"
             variant="outlined"
@@ -39,6 +37,13 @@
             variant="outlined"
             :rules="[required]"
           />
+
+          <div
+            v-if="error"
+            class="text-error mt-2"
+          >
+            {{ error }}
+          </div>
 
           <div class="d-flex justify-end ga-2 mt-4">
             <v-btn
@@ -64,56 +69,39 @@
 </template>
 
 <script setup lang="ts">
-import type { ZeitgutschriftDTO } from "@/api/generated/api-spec";
+import type {
+  ZeitgutschriftRequestDTO,
+  ZeitgutschriftResponseDTO,
+} from "@/api/generated/api-spec/models";
 
 import { computed, ref, watch } from "vue";
 
 import { ApiFactory } from "@/api/ApiFactory";
 import { ZeitgutschriftControllerApi } from "@/api/generated/api-spec";
 
-/*
- * Dialog
- */
 const dialog = defineModel<boolean>({
   default: false,
 });
 
-/*
- * Props
- */
 const props = defineProps<{
   studentId: number;
-  zeitgutschrift: ZeitgutschriftDTO | undefined;
+  zeitgutschrift: ZeitgutschriftResponseDTO | undefined;
 }>();
 
-/*
- * Events
- */
 const emit = defineEmits<{
   updated: [];
 }>();
 
-/*
- * API
- */
-const zeitgutschriftApi = ApiFactory.getInstance(
-  ZeitgutschriftControllerApi
-);
+const zeitgutschriftApi = ApiFactory.getInstance(ZeitgutschriftControllerApi);
 
-/*
- * Formular
- */
 const form = ref();
 
-const mengeMinuten = ref<number>();
+const minuten = ref<number>();
 const grund = ref("");
 
 const saving = ref(false);
+const error = ref("");
 
-/*
- * Daten der ausgewählten Zeitgutschrift
- * ins Formular übernehmen.
- */
 watch(
   () => props.zeitgutschrift,
   (zeitgutschrift) => {
@@ -121,40 +109,28 @@ watch(
       return;
     }
 
-    mengeMinuten.value = zeitgutschrift.mengeMinuten;
+    minuten.value = zeitgutschrift.minuten;
     grund.value = zeitgutschrift.grund ?? "";
+    error.value = "";
   },
   {
     immediate: true,
   }
 );
 
-/*
- * Datum anzeigen.
- *
- * Das Datum kommt beim Bearbeiten aus der
- * vorhandenen Zeitgutschrift.
- */
 const formattedDate = computed(() => {
-  return (
-    props.zeitgutschrift?.tag?.toLocaleDateString("de-DE") ?? ""
-  );
+  return props.zeitgutschrift?.datum?.toLocaleDateString("de-DE") ?? "";
 });
 
-/*
- * Validierung
- */
 const required = (value: string) =>
   !!value?.trim() || "Dieses Feld ist erforderlich";
 
 const requiredMinutes = (value: number | undefined) =>
-  (value !== undefined && value > 0) ||
-  "Die Minuten müssen größer als 0 sein.";
+  (value !== undefined && value > 0) || "Die Minuten müssen größer als 0 sein.";
 
-/*
- * PUT /zeitgutschrift
- */
 async function updateZeitgutschrift() {
+  error.value = "";
+
   const result = await form.value?.validate();
 
   if (!result?.valid) {
@@ -165,36 +141,42 @@ async function updateZeitgutschrift() {
 
   if (
     !zeitgutschrift ||
-    zeitgutschrift.id === undefined ||
-    !zeitgutschrift.tag
+    zeitgutschrift.zeitgutschriftId === undefined ||
+    !zeitgutschrift.datum
   ) {
+    error.value = "Die Zeitgutschrift ist unvollständig.";
     return;
   }
 
   saving.value = true;
 
   try {
-    await zeitgutschriftApi.updateZeitgutschrift({
-      tag: zeitgutschrift.tag,
-      mengeMinuten: mengeMinuten.value,
+    const request: ZeitgutschriftRequestDTO = {
+      studentId: props.studentId,
+      datum: zeitgutschrift.datum,
+      minuten: minuten.value,
       grund: grund.value.trim(),
-      praktikumID: props.studentId,
-      zeitgutschriftID: zeitgutschrift.id,
-    });
+    };
+
+    await zeitgutschriftApi.updateZeitgutschrift(
+      zeitgutschrift.zeitgutschriftId,
+      request
+    );
 
     emit("updated");
-
     close();
+  } catch (e) {
+    console.debug("Zeitgutschrift konnte nicht aktualisiert werden:", e);
+
+    error.value = "Die Zeitgutschrift konnte nicht gespeichert werden.";
   } finally {
     saving.value = false;
   }
 }
 
-/*
- * Dialog schließen
- */
 function close() {
   dialog.value = false;
+  error.value = "";
 
   form.value?.resetValidation();
 }

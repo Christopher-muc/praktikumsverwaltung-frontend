@@ -7,15 +7,13 @@
     />
 
     <template v-else>
-      <v-alert
+      <div
         v-if="!praktikumExists"
-        type="info"
-        variant="tonal"
-        class="mb-4"
+        class="text-medium-emphasis mb-4"
       >
         Für diesen Studenten ist noch kein Praktikum angelegt. Beim Speichern
         wird ein neues Praktikum erstellt.
-      </v-alert>
+      </div>
 
       <v-text-field
         v-model="beginnDatum"
@@ -26,7 +24,7 @@
       />
 
       <v-text-field
-        v-model="endeDatum"
+        v-model="endDatum"
         label="Ende"
         type="date"
         variant="outlined"
@@ -34,32 +32,30 @@
       />
 
       <v-text-field
-        v-model="wochenarbeitszeit"
+        v-model.number="wochenarbeitszeit"
         label="Wochenarbeitszeit"
         type="number"
         variant="outlined"
         suffix="Stunden"
-        min="0"
+        min="1"
         class="mb-2"
       />
 
       <v-text-field
-        v-model="benoetigteWochen"
+        v-model.number="benoetigteWochen"
         label="Benötigte Wochen"
         type="number"
         variant="outlined"
         suffix="Wochen"
-        min="0"
+        min="1"
       />
 
-      <v-alert
+      <div
         v-if="dateError"
-        type="error"
-        variant="tonal"
-        class="mt-4"
+        class="text-error mt-4"
       >
         {{ dateError }}
-      </v-alert>
+      </div>
     </template>
   </div>
 </template>
@@ -75,7 +71,7 @@ const beginnDatum = defineModel<string>("beginnDatum", {
   required: true,
 });
 
-const endeDatum = defineModel<string>("endeDatum", {
+const endDatum = defineModel<string>("endDatum", {
   required: true,
 });
 

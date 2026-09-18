@@ -1,6 +1,6 @@
 <template>
   <v-card
-    :title="`${student.vorname} ${student.nachname}`"
+    :title="`${student.vorname ?? ''} ${student.nachname ?? ''}`"
     elevation="5"
   >
     <v-row>
@@ -16,7 +16,7 @@
             <br />
 
             Praktikumsende:
-            {{ praktikum.endeDatum ? toDateString(praktikum.endeDatum) : "-" }}
+            {{ praktikum.endDatum ? toDateString(praktikum.endDatum) : "-" }}
 
             <br />
 
@@ -26,7 +26,7 @@
             <br />
 
             Wochenarbeitszeit:
-            {{ praktikum.wochenarbeitszeit ?? "-" }}
+            {{ praktikum.wochenarbeitszeit ?? "-" }} h
           </template>
 
           <div
@@ -52,7 +52,7 @@
           >
             <v-list-item
               v-for="studiengang in student.studiengaenge"
-              :key="studiengang.studiengangNr"
+              :key="studiengang.studiengangId"
               :title="studiengang.name"
             />
           </v-list>
@@ -70,12 +70,15 @@
 </template>
 
 <script setup lang="ts">
-import type { FullPraktikumDTO, StudentDTO } from "@/api/generated/api-spec";
+import type {
+  PraktikumResponseDTO,
+  StudentResponseDTO,
+} from "@/api/generated/api-spec/models";
 
 import { toDateString } from "@/util/formatter";
 
 defineProps<{
-  student: StudentDTO;
-  praktikum?: FullPraktikumDTO;
+  student: StudentResponseDTO;
+  praktikum?: PraktikumResponseDTO;
 }>();
 </script>

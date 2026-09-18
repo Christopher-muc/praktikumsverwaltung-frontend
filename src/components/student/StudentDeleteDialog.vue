@@ -15,9 +15,17 @@
         </strong>
         wirklich löschen?
 
+        <div
+          v-if="error"
+          class="text-error mt-4"
+        >
+          {{ error }}
+        </div>
+
         <div class="d-flex justify-end ga-2 mt-6">
           <v-btn
             variant="text"
+            :disabled="deleting"
             @click="close"
           >
             Abbrechen
@@ -25,6 +33,7 @@
 
           <v-btn
             color="error"
+            :loading="deleting"
             @click="deleteStudent"
           >
             Löschen
@@ -36,15 +45,19 @@
 </template>
 
 <script setup lang="ts">
-import type { SimpleStudentDTO } from "@/api/generated/api-spec";
+import type { StudentResponseDTO } from "@/api/generated/api-spec/models";
+
+import { ref } from "vue";
 
 import { ApiFactory } from "@/api/ApiFactory";
 import { StudentControllerApi } from "@/api/generated/api-spec";
 
-const dialog = defineModel<boolean>({ default: false });
+const dialog = defineModel<boolean>({
+  default: false,
+});
 
 const props = defineProps<{
-  student: SimpleStudentDTO | null;
+  student: StudentResponseDTO | null;
 }>();
 
 const emit = defineEmits<{
@@ -53,25 +66,36 @@ const emit = defineEmits<{
 
 const studentApi = ApiFactory.getInstance(StudentControllerApi);
 
+const deleting = ref(false);
+const error = ref("");
+
 async function deleteStudent() {
-  console.log("Student beim Löschen:", props.student);
-  console.log("Student-ID:", props.student?.studentId);
+  error.value = "";
 
   if (props.student?.studentId === undefined) {
-    console.error("Keine studentId vorhanden");
+    error.value = "Der Student besitzt keine ID.";
     return;
   }
 
-  await studentApi.deleteStudent(props.student.studentId);
+  deleting.value = true;
 
-  console.log("Student gelöscht");
+  try {
+    await studentApi.deleteStudent(props.student.studentId);
 
-  emit("deleted");
+    emit("deleted");
 
-  close();
+    close();
+  } catch (e) {
+    console.debug("Student konnte nicht gelöscht werden:", e);
+
+    error.value = "Der Student konnte nicht gelöscht werden.";
+  } finally {
+    deleting.value = false;
+  }
 }
 
 function close() {
   dialog.value = false;
+  error.value = "";
 }
 </script>

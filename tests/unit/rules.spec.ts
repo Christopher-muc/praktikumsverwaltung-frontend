@@ -114,7 +114,7 @@ describe("unique rule tests", () => {
     // when
     const result = validationRule(newValue);
 
-    // then
+    // thenu
     assert.isTrue(result);
   });
 

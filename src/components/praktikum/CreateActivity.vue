@@ -12,45 +12,44 @@
       <v-card-text class="pa-6">
         <v-form @submit.prevent="save">
           <v-text-field
-            :model-value="formattedDate"
-            label="Tag"
+            v-model="beschreibung"
+            label="Beschreibung"
+            variant="outlined"
+            class="mb-2"
+          />
+
+          <v-text-field
+            v-model="beginnDatum"
+            label="Beginn"
             type="date"
             variant="outlined"
-            readonly
             class="mb-2"
           />
 
           <v-text-field
-            v-model="beginnZeit"
-            label="Beginn"
-            type="time"
-            variant="outlined"
-            class="mb-2"
-          />
-
-          <v-text-field
-            v-model="endeZeit"
+            v-model="endDatum"
             label="Ende"
-            type="time"
+            type="date"
             variant="outlined"
             class="mb-2"
           />
 
-          <v-switch
-            v-model="homeoffice"
-            label="Homeoffice"
-            color="primary"
-            hide-details
+          <v-text-field
+            v-model.number="stundenanzahl"
+            label="Stundenanzahl"
+            type="number"
+            variant="outlined"
+            suffix="h"
+            min="0"
+            class="mb-2"
           />
 
-          <v-alert
-            v-if="timeError"
-            type="error"
-            variant="tonal"
-            class="mt-4"
+          <div
+            v-if="error"
+            class="text-error mt-2"
           >
-            {{ timeError }}
-          </v-alert>
+            {{ error }}
+          </div>
 
           <div class="d-flex justify-end ga-2 mt-6">
             <v-btn
@@ -76,111 +75,108 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import type { TaetigkeitenblockRequestDTO } from "@/api/generated/api-spec/models";
 
-/*
- * Dialog
- */
+import { ref, watch } from "vue";
+
+import { ApiFactory } from "@/api/ApiFactory";
+import { TaetigkeitenblockControllerApi } from "@/api/generated/api-spec";
+
 const dialog = defineModel<boolean>({
   default: false,
 });
 
-/*
- * Props
- *
- * Student und ausgewählter Kalendertag
- * kommen aus student/[id].vue.
- */
 const props = defineProps<{
   studentId: number;
   selectedDate?: Date;
 }>();
 
-/*
- * Events
- */
 const emit = defineEmits<{
   created: [];
 }>();
 
-/*
- * Formulardaten
- */
-const beginnZeit = ref("");
-const endeZeit = ref("");
-const homeoffice = ref(false);
+const taetigkeitenblockApi = ApiFactory.getInstance(
+  TaetigkeitenblockControllerApi
+);
 
-/*
- * Status
- */
+const beschreibung = ref("");
+const beginnDatum = ref("");
+const endDatum = ref("");
+const stundenanzahl = ref<number>();
+
 const saving = ref(false);
-const timeError = ref("");
+const error = ref("");
 
-/*
- * Datum für <input type="date">
- */
-const formattedDate = computed(() => {
-  if (!props.selectedDate) {
-    return "";
+watch(
+  () => dialog.value,
+  (open) => {
+    if (!open) {
+      return;
+    }
+
+    resetForm();
+
+    if (props.selectedDate) {
+      const date = toDateKey(props.selectedDate);
+
+      beginnDatum.value = date;
+      endDatum.value = date;
+    }
   }
+);
 
-  return toDateKey(props.selectedDate);
-});
-
-/*
- * Tätigkeitsblock speichern
- */
 async function save() {
-  timeError.value = "";
+  error.value = "";
 
   if (!props.selectedDate) {
+    error.value = "Es wurde kein Datum ausgewählt.";
     return;
   }
 
-  /*
-   * Zeit validieren.
-   */
-  if (
-    beginnZeit.value &&
-    endeZeit.value &&
-    endeZeit.value <= beginnZeit.value
-  ) {
-    timeError.value = "Das Ende muss nach dem Beginn liegen.";
+  if (!beschreibung.value.trim()) {
+    error.value = "Bitte eine Beschreibung eingeben.";
+    return;
+  }
+
+  if (!beginnDatum.value || !endDatum.value) {
+    error.value = "Bitte Beginn und Ende angeben.";
+    return;
+  }
+
+  if (endDatum.value < beginnDatum.value) {
+    error.value = "Das Enddatum darf nicht vor dem Beginn liegen.";
+    return;
+  }
+
+  if (stundenanzahl.value === undefined || stundenanzahl.value <= 0) {
+    error.value = "Die Stundenanzahl muss größer als 0 sein.";
     return;
   }
 
   saving.value = true;
 
   try {
-    /*
-     * Später kommt hier der Backend-Aufruf hinein.
-     */
-    const activityData = {
+    const request: TaetigkeitenblockRequestDTO = {
       studentId: props.studentId,
-      tag: props.selectedDate,
-      beginnZeit: beginnZeit.value,
-      endeZeit: endeZeit.value,
-      homeoffice: homeoffice.value,
+      beschreibung: beschreibung.value.trim(),
+      beginnDatum: new Date(`${beginnDatum.value}T00:00:00`),
+      endDatum: new Date(`${endDatum.value}T00:00:00`),
+      stundenanzahl: stundenanzahl.value,
     };
 
-    console.debug("Tätigkeitsblock erstellen:", activityData);
-
-    /*
-     * Später z. B.:
-     *
-     * await taetigkeitApi.createTaetigkeit(...)
-     */
+    await taetigkeitenblockApi.createTaetigkeitenblock(request);
 
     emit("created");
     close();
+  } catch (e) {
+    console.debug("Tätigkeitsblock konnte nicht erstellt werden:", e);
+
+    error.value = "Der Tätigkeitsblock konnte nicht erstellt werden.";
   } finally {
     saving.value = false;
   }
 }
 
-/*
- * Date -> YYYY-MM-DD
- */
 function toDateKey(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -189,21 +185,16 @@ function toDateKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-/*
- * Dialog schließen
- */
 function close() {
   dialog.value = false;
   resetForm();
 }
 
-/*
- * Formular zurücksetzen
- */
 function resetForm() {
-  beginnZeit.value = "";
-  endeZeit.value = "";
-  homeoffice.value = false;
-  timeError.value = "";
+  beschreibung.value = "";
+  beginnDatum.value = "";
+  endDatum.value = "";
+  stundenanzahl.value = undefined;
+  error.value = "";
 }
 </script>

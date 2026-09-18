@@ -14,20 +14,266 @@ tags:
       description: Spring Boot Actuator Web API Documentation
       url: https://docs.spring.io/spring-boot/docs/current/actuator-api/html/
 paths:
-  /zeitgutschrift:
+  /zeitgutschriften/{zeitgutschriftId}:
+    get:
+      tags:
+        - zeitgutschrift-controller
+      operationId: getZeitgutschrift
+      parameters:
+        - name: zeitgutschriftId
+          in: path
+          required: true
+          schema:
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ZeitgutschriftResponseDTO"
     put:
       tags:
         - zeitgutschrift-controller
       operationId: updateZeitgutschrift
+      parameters:
+        - name: zeitgutschriftId
+          in: path
+          required: true
+          schema:
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ZeitgutschriftUpdateDTO"
+              $ref: "#/components/schemas/ZeitgutschriftRequestDTO"
         required: true
       responses:
-        "204":
-          description: No Content
+        "200":
+          description: OK
+    delete:
+      tags:
+        - zeitgutschrift-controller
+      operationId: deleteZeitgutschrift
+      parameters:
+        - name: zeitgutschriftId
+          in: path
+          required: true
+          schema:
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+  /taetigkeitenbloecke/{taetigkeitenblockId}:
+    get:
+      tags:
+        - taetigkeitenblock-controller
+      operationId: getTaetigkeitenblock
+      parameters:
+        - name: taetigkeitenblockId
+          in: path
+          required: true
+          schema:
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TaetigkeitenblockResponseDTO"
+    put:
+      tags:
+        - taetigkeitenblock-controller
+      operationId: updateTaetigkeitenblock
+      parameters:
+        - name: taetigkeitenblockId
+          in: path
+          required: true
+          schema:
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaetigkeitenblockRequestDTO"
+        required: true
+      responses:
+        "200":
+          description: OK
+    delete:
+      tags:
+        - taetigkeitenblock-controller
+      operationId: deleteTaetigkeitenblock
+      parameters:
+        - name: taetigkeitenblockId
+          in: path
+          required: true
+          schema:
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+  /studiengaenge/student/{studentId}:
+    put:
+      tags:
+        - studiengang-controller
+      operationId: updateStudiengaengeByStudent
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentStudiengaengeRequestDTO"
+        required: true
+      responses:
+        "200":
+          description: OK
+  /student/{studentId}:
+    get:
+      tags:
+        - student-controller
+      operationId: getStudent
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StudentResponseDTO"
+    put:
+      tags:
+        - student-controller
+      operationId: updateStudent
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentRequestDTO"
+        required: true
+      responses:
+        "200":
+          description: OK
+    delete:
+      tags:
+        - student-controller
+      operationId: deleteStudent
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+  /praktikum/{studentId}:
+    get:
+      tags:
+        - praktikum-controller
+      operationId: getPraktikum
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PraktikumResponseDTO"
+    put:
+      tags:
+        - praktikum-controller
+      operationId: updatePraktikum
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PraktikumRequestDTO"
+        required: true
+      responses:
+        "200":
+          description: OK
+    delete:
+      tags:
+        - praktikum-controller
+      operationId: deletePraktikum
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+  /zeitgutschriften:
     post:
       tags:
         - zeitgutschrift-controller
@@ -36,121 +282,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ZeitgutschriftCreateDTO"
+              $ref: "#/components/schemas/ZeitgutschriftRequestDTO"
         required: true
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           content:
             '*/*':
               schema:
                 type: integer
-                format: int32
-  /student/{id}:
-    get:
-      tags:
-        - student-controller
-      operationId: getStudent
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int32
-      responses:
-        "200":
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/StudentDTO"
-    put:
-      tags:
-        - student-controller
-      operationId: updateStudent
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int32
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateUpdateOrSearchStudentRequestDTO"
-        required: true
-      responses:
-        "200":
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/StudentDTO"
-    delete:
-      tags:
-        - student-controller
-      operationId: deleteStudent
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int32
-      responses:
-        "501":
-          description: Not Implemented
-  /praktikum:
-    get:
-      tags:
-        - praktikum-controller
-      operationId: getPraktikum
-      parameters:
-        - name: studentenId
-          in: query
-          required: true
-          schema:
-            type: integer
-            format: int32
-      responses:
-        "200":
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/FullPraktikumDTO"
-    put:
-      tags:
-        - praktikum-controller
-      operationId: updatePraktikum
-      parameters:
-        - name: studentId
-          in: query
-          required: true
-          schema:
-            type: integer
-            format: int32
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/PraktikumUpdateDTO"
-        required: true
-      responses:
-        "200":
-          description: OK
+                format: int64
+  /taetigkeitenbloecke:
     post:
       tags:
-        - praktikum-controller
-      operationId: createPraktikum
+        - taetigkeitenblock-controller
+      operationId: createTaetigkeitenblock
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PraktikumDTO"
+              $ref: "#/components/schemas/TaetigkeitenblockRequestDTO"
         required: true
       responses:
         "200":
@@ -159,8 +310,53 @@ paths:
             '*/*':
               schema:
                 type: integer
-                format: int32
+                format: int64
+  /studiengaenge:
+    get:
+      tags:
+        - studiengang-controller
+      operationId: getStudiengaenge
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StudiengangResponseDTO"
+    post:
+      tags:
+        - studiengang-controller
+      operationId: createStudiengang
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudiengangRequestDTO"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: integer
+                format: int64
   /student:
+    get:
+      tags:
+        - student-controller
+      operationId: getStudents
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StudentResponseDTO"
     post:
       tags:
         - student-controller
@@ -169,28 +365,67 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateUpdateOrSearchStudentRequestDTO"
+              $ref: "#/components/schemas/StudentRequestDTO"
         required: true
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           content:
             '*/*':
               schema:
                 type: integer
-                format: int32
-  /taetigkeitenblock/{studentid}/{tag}:
+                format: int64
+  /praktikum:
+    post:
+      tags:
+        - praktikum-controller
+      operationId: createPraktikum
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PraktikumRequestDTO"
+        required: true
+      responses:
+        "200":
+          description: OK
+  /zeitgutschriften/student/{studentId}:
     get:
       tags:
-        - taetigkeitenblock-controller
-      operationId: getTaetigkeitbyDay
+        - zeitgutschrift-controller
+      operationId: getZeitgutschriftenByStudent
       parameters:
-        - name: studentid
+        - name: studentId
           in: path
           required: true
           schema:
+            minimum: 0
+            exclusiveMinimum: true
             type: integer
-            format: int32
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ZeitgutschriftResponseDTO"
+  /taetigkeitenbloecke/student/{studentId}/{tag}:
+    get:
+      tags:
+        - taetigkeitenblock-controller
+      operationId: getTaetigkeitenbloeckeByStudentAndTag
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
         - name: tag
           in: path
           required: true
@@ -205,37 +440,58 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/TaetigkeitenblockDTO"
-  /students:
+                  $ref: "#/components/schemas/TaetigkeitenblockResponseDTO"
+  /studiengaenge/{studiengangId}:
     get:
       tags:
-        - student-controller
-      operationId: getAllStudents
-      responses:
-        "200":
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SimpleStudentDTO"
-  /studentByName:
-    get:
-      tags:
-        - student-controller
-      operationId: getStudentByName
+        - studiengang-controller
+      operationId: getStudiengang
       parameters:
-        - name: vorname
-          in: query
+        - name: studiengangId
+          in: path
           required: true
           schema:
-            type: string
-        - name: nachname
-          in: query
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StudiengangResponseDTO"
+    delete:
+      tags:
+        - studiengang-controller
+      operationId: deleteStudiengang
+      parameters:
+        - name: studiengangId
+          in: path
           required: true
           schema:
-            type: string
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+  /studiengaenge/{studiengangId}/studenten:
+    get:
+      tags:
+        - studiengang-controller
+      operationId: getStudentenByStudiengang
+      parameters:
+        - name: studiengangId
+          in: path
+          required: true
+          schema:
+            minimum: 0
+            exclusiveMinimum: true
+            type: integer
+            format: int64
       responses:
         "200":
           description: OK
@@ -244,7 +500,19 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/SimpleStudentDTO"
+                  $ref: "#/components/schemas/StudentResponseDTO"
+  /student/me:
+    get:
+      tags:
+        - student-controller
+      operationId: getMyStudent
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StudentResponseDTO"
   /actuator:
     get:
       tags:
@@ -386,194 +654,231 @@ paths:
             application/json:
               schema:
                 type: object
-  /zeitgutschrift/{id}:
-    delete:
-      tags:
-        - zeitgutschrift-controller
-      operationId: deleteZeitgutschrift
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int32
-      responses:
-        "200":
-          description: OK
 components:
   schemas:
-    ZeitgutschriftUpdateDTO:
+    ZeitgutschriftRequestDTO:
+      required:
+        - datum
+        - grund
+        - minuten
+        - studentId
       type: object
       properties:
-        tag:
+        studentId:
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          format: int64
+        datum:
           type: string
           format: date
-        mengeMinuten:
+        minuten:
+          minimum: 0
+          exclusiveMinimum: true
           type: integer
           format: int32
         grund:
+          maxLength: 500
+          minLength: 2
           type: string
-        praktikumID:
-          type: integer
-          format: int32
-        zeitgutschriftID:
-          type: integer
-          format: int32
-    CreateUpdateOrSearchStudentRequestDTO:
+    TaetigkeitenblockRequestDTO:
+      required:
+        - beginnDatum
+        - beschreibung
+        - endDatum
+        - studentId
+        - stundenanzahl
       type: object
       properties:
-        vorname:
+        studentId:
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          format: int64
+        beschreibung:
+          maxLength: 1000
+          minLength: 2
           type: string
-        nachname:
-          type: string
-    PraktikumDTO:
-      type: object
-      properties:
         beginnDatum:
           type: string
           format: date
-        endeDatum:
+        endDatum:
           type: string
           format: date
-        studentId:
+        stundenanzahl:
+          minimum: 0
+          exclusiveMinimum: true
           type: integer
           format: int32
+        zeitraumGueltig:
+          type: boolean
+    StudentStudiengaengeRequestDTO:
+      required:
+        - studiengangIds
+      type: object
+      properties:
+        studiengangIds:
+          uniqueItems: true
+          type: array
+          items:
+            type: integer
+            format: int64
+    StudentRequestDTO:
+      required:
+        - email
+        - nachname
+        - vorname
+      type: object
+      properties:
+        vorname:
+          maxLength: 100
+          minLength: 2
+          type: string
+        nachname:
+          maxLength: 100
+          minLength: 2
+          type: string
+        email:
+          maxLength: 254
+          minLength: 0
+          type: string
+          format: email
         wochenarbeitszeit:
+          maximum: 60
+          minimum: 1
           type: integer
           format: int32
-        benoetigteWochen:
-          type: integer
-          format: int32
-    StudentDTO:
+    PraktikumRequestDTO:
+      required:
+        - beginnDatum
+        - benoetigteWochen
+        - endDatum
+        - studentId
+        - wochenarbeitszeit
       type: object
       properties:
         studentId:
+          minimum: 1
+          type: integer
+          format: int64
+        beginnDatum:
+          type: string
+          format: date
+        endDatum:
+          type: string
+          format: date
+        benoetigteWochen:
+          maximum: 52
+          minimum: 1
           type: integer
           format: int32
-        vorname:
-          type: string
-        nachname:
-          type: string
-        studiengaenge:
-          type: array
-          items:
-            $ref: "#/components/schemas/Studiengang"
-        praktikum:
-          $ref: "#/components/schemas/PraktikumDTO"
-        url:
-          type: string
-    Studiengang:
+        wochenarbeitszeit:
+          maximum: 60
+          minimum: 1
+          type: integer
+          format: int32
+    StudiengangRequestDTO:
       required:
         - name
       type: object
       properties:
-        studiengangNr:
-          type: integer
-          format: int32
         name:
-          maxLength: 255
-          minLength: 1
+          maxLength: 150
+          minLength: 2
           type: string
-    PraktikumUpdateDTO:
+    ZeitgutschriftResponseDTO:
       type: object
       properties:
-        beginnDatum:
-          type: string
-          format: date
-        endeDatum:
-          type: string
-          format: date
-        wochenarbeitszeit:
+        zeitgutschriftId:
           type: integer
-          format: int32
-        benoetigteWochen:
+          format: int64
+        studentId:
           type: integer
-          format: int32
-    ZeitgutschriftCreateDTO:
-      type: object
-      properties:
-        tag:
+          format: int64
+        datum:
           type: string
           format: date
-        mengeMinuten:
+        minuten:
           type: integer
           format: int32
         grund:
           type: string
-        praktikumID:
+    TaetigkeitenblockResponseDTO:
+      type: object
+      properties:
+        taetigkeitenblockId:
           type: integer
-          format: int32
-    TaetigkeitenblockDTO:
-      type: object
-      properties:
-        taetigkeitenblockID:
-          $ref: "#/components/schemas/TaetigkeitenblockIdDTO"
-        homeoffice:
-          type: boolean
-    TaetigkeitenblockIdDTO:
-      type: object
-      properties:
+          format: int64
         studentId:
           type: integer
-          format: int32
-        beginnZeit:
+          format: int64
+        beschreibung:
           type: string
-        endeZeit:
-          type: string
-        tag:
+        beginnDatum:
           type: string
           format: date
-    SimpleStudentDTO:
+        endDatum:
+          type: string
+          format: date
+        stundenanzahl:
+          type: integer
+          format: int32
+    StudiengangResponseDTO:
+      type: object
+      properties:
+        studiengangId:
+          type: integer
+          format: int64
+        name:
+          type: string
+    PraktikumResponseDTO:
       type: object
       properties:
         studentId:
           type: integer
+          format: int64
+        beginnDatum:
+          type: string
+          format: date
+        endDatum:
+          type: string
+          format: date
+        benoetigteWochen:
+          type: integer
           format: int32
+        wochenarbeitszeit:
+          type: integer
+          format: int32
+        taetigkeitenbloecke:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaetigkeitenblockResponseDTO"
+        zeitgutschriften:
+          type: array
+          items:
+            $ref: "#/components/schemas/ZeitgutschriftResponseDTO"
+    StudentResponseDTO:
+      type: object
+      properties:
+        studentId:
+          type: integer
+          format: int64
         vorname:
           type: string
         nachname:
           type: string
-    FullPraktikumDTO:
-      type: object
-      properties:
-        beginnDatum:
+        email:
           type: string
-          format: date
-        endeDatum:
-          type: string
-          format: date
-        studentId:
-          type: integer
-          format: int32
         wochenarbeitszeit:
           type: integer
           format: int32
-        benoetigteWochen:
-          type: integer
-          format: int32
-        taetigkeiten:
+        praktikum:
+          $ref: "#/components/schemas/PraktikumResponseDTO"
+        studiengaenge:
+          uniqueItems: true
           type: array
           items:
-            $ref: "#/components/schemas/TaetigkeitenblockDTO"
-        zeitgutschriften:
-          type: array
-          items:
-            $ref: "#/components/schemas/SimpleZeitgutschriftDTO"
-    SimpleZeitgutschriftDTO:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int32
-        tag:
-          type: string
-          format: date
-        mengeMinuten:
-          type: integer
-          format: int32
-        grund:
-          type: string
+            $ref: "#/components/schemas/StudiengangResponseDTO"
     Link:
       type: object
       properties:

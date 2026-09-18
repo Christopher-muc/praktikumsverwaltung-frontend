@@ -38,9 +38,37 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/student/[id]': RouteRecordInfo<
-      '/student/[id]',
-      '/student/:id',
+    '/me': RouteRecordInfo<
+      '/me',
+      '/me',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/students/': RouteRecordInfo<
+      '/students/',
+      '/students',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/students/[id]': RouteRecordInfo<
+      '/students/[id]',
+      '/students/:id',
+      { id: ParamValue<true> },
+      { id: ParamValue<false> },
+      | never
+    >,
+    '/studiengaenge/': RouteRecordInfo<
+      '/studiengaenge/',
+      '/studiengaenge',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/studiengaenge/[id]': RouteRecordInfo<
+      '/studiengaenge/[id]',
+      '/studiengaenge/:id',
       { id: ParamValue<true> },
       { id: ParamValue<false> },
       | never
@@ -66,9 +94,41 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
-    'src/routes/student/%5Bid%5D.vue': {
+    'src/routes/me.vue': {
       routes:
-        | '/student/[id]'
+        | '/me'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/routes/students/index.vue': {
+      routes:
+        | '/students/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/routes/students/%5Bid%5D.vue': {
+      routes:
+        | '/students/[id]'
+      views:
+        | never
+      pathParamNames:
+        | 'id'
+    }
+    'src/routes/studiengaenge/index.vue': {
+      routes:
+        | '/studiengaenge/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/routes/studiengaenge/%5Bid%5D.vue': {
+      routes:
+        | '/studiengaenge/[id]'
       views:
         | never
       pathParamNames:

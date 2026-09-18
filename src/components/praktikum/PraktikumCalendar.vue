@@ -1,6 +1,8 @@
 <template>
   <v-card elevation="5">
-    <v-card-title> Kalender </v-card-title>
+    <v-card-title>
+      {{ t("domain.praktikum.calendar") }}
+    </v-card-title>
 
     <v-date-picker
       v-if="praktikum"
@@ -23,6 +25,9 @@
 <script setup lang="ts">
 import type { FullPraktikumDTO } from "@/api/generated/api-spec";
 
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 const selectedDate = defineModel<Date>();
 
 const props = defineProps<{

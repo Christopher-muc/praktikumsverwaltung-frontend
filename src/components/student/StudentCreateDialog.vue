@@ -24,7 +24,7 @@
               @submit.prevent="nextStep"
             >
               <v-text-field
-                v-model="newStudent.firstName"
+                v-model="newStudent.vorname"
                 label="Vorname"
                 variant="outlined"
                 :rules="[required]"
@@ -33,10 +33,30 @@
               />
 
               <v-text-field
-                v-model="newStudent.lastName"
+                v-model="newStudent.nachname"
                 label="Nachname"
                 variant="outlined"
                 :rules="[required]"
+                class="mb-2"
+              />
+
+              <v-text-field
+                v-model="newStudent.email"
+                label="E-Mail"
+                type="email"
+                variant="outlined"
+                :rules="[required]"
+                class="mb-2"
+              />
+
+              <v-text-field
+                v-model.number="newStudent.wochenarbeitszeit"
+                label="Wochenarbeitszeit"
+                type="number"
+                variant="outlined"
+                suffix="h"
+                min="1"
+                :rules="[requiredNumber]"
                 class="mb-2"
               />
 
@@ -65,26 +85,26 @@
               @submit.prevent="nextPraktikumStep"
             >
               <v-text-field
-                v-model.number="newStudent.targetHours"
+                v-model.number="newPraktikum.wochenarbeitszeit"
                 label="Sollzeit pro Woche"
                 type="number"
                 variant="outlined"
                 suffix="h"
-                min="0"
+                min="1"
                 class="mb-2"
               />
 
               <v-text-field
-                v-model.number="newStudent.requiredWeeks"
+                v-model.number="newPraktikum.benoetigteWochen"
                 label="Benötigte Wochen"
                 type="number"
                 variant="outlined"
-                min="0"
+                min="1"
                 class="mb-2"
               />
 
               <v-text-field
-                v-model="newStudent.startDate"
+                v-model="newPraktikum.beginnDatum"
                 label="Beginn"
                 type="date"
                 variant="outlined"
@@ -92,7 +112,7 @@
               />
 
               <v-text-field
-                v-model="newStudent.endDate"
+                v-model="newPraktikum.endDatum"
                 label="Ende"
                 type="date"
                 variant="outlined"
@@ -129,16 +149,30 @@
             </v-form>
           </template>
 
-          <!-- SCHRITT 3: STUDIENGANG -->
+          <!-- SCHRITT 3: STUDIENGÄNGE -->
           <template #[`item.3`]>
             <v-form @submit.prevent="createStudent">
-              <v-text-field
-                v-model="studiengang"
-                label="Studiengang"
+              <v-autocomplete
+                v-model="selectedStudiengangIds"
+                :items="availableStudiengaenge"
+                item-title="name"
+                item-value="studiengangId"
+                label="Studiengänge"
                 variant="outlined"
+                multiple
+                chips
+                closable-chips
+                clearable
+                :loading="studiengaengeLoading"
                 class="mt-4 mb-2"
-                autofocus
               />
+
+              <div
+                v-if="error"
+                class="text-error mt-2"
+              >
+                {{ error }}
+              </div>
 
               <div class="d-flex justify-space-between mt-4">
                 <v-btn
@@ -162,6 +196,7 @@
                     color="primary"
                     type="submit"
                     :loading="saving"
+                    :disabled="studiengaengeLoading"
                   >
                     Student anlegen
                   </v-btn>
@@ -176,83 +211,106 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import type {
+  PraktikumRequestDTO,
+  StudentRequestDTO,
+  StudiengangResponseDTO,
+} from "@/api/generated/api-spec/models";
+
+import { reactive, ref, watch } from "vue";
 
 import { ApiFactory } from "@/api/ApiFactory";
 import {
   PraktikumControllerApi,
   StudentControllerApi,
+  StudiengangControllerApi,
 } from "@/api/generated/api-spec";
 
-/*
- * Dialog
- */
 const dialog = defineModel<boolean>({
   default: false,
 });
 
-/*
- * Events
- */
 const emit = defineEmits<{
   created: [];
 }>();
 
-/*
- * APIs
- */
 const studentApi = ApiFactory.getInstance(StudentControllerApi);
+
 const praktikumApi = ApiFactory.getInstance(PraktikumControllerApi);
 
-/*
- * Stepper / Forms
- */
+const studiengangApi = ApiFactory.getInstance(StudiengangControllerApi);
+
 const step = ref(1);
 
 const studentForm = ref();
 const praktikumForm = ref();
 
 const saving = ref(false);
+const error = ref("");
 
-/*
- * Formulardaten
- */
+const studiengaengeLoading = ref(false);
+
+const availableStudiengaenge = ref<StudiengangResponseDTO[]>([]);
+
+const selectedStudiengangIds = ref<number[]>([]);
+
 const newStudent = reactive({
-  firstName: "",
-  lastName: "",
-
-  targetHours: undefined as number | undefined,
-  requiredWeeks: undefined as number | undefined,
-
-  startDate: "",
-  endDate: "",
+  vorname: "",
+  nachname: "",
+  email: "",
+  wochenarbeitszeit: undefined as number | undefined,
 });
 
-/*
- * Studiengang
- */
-const studiengang = ref("");
+const newPraktikum = reactive({
+  wochenarbeitszeit: undefined as number | undefined,
+  benoetigteWochen: undefined as number | undefined,
+  beginnDatum: "",
+  endDatum: "",
+});
 
-/*
- * Validierung
- */
 const required = (value: string) =>
   !!value?.trim() || "Dieses Feld ist erforderlich";
 
+const requiredNumber = (value: number | undefined) =>
+  (value !== undefined && value > 0) || "Der Wert muss größer als 0 sein.";
+
 const endDateRule = (value: string) => {
-  if (!value || !newStudent.startDate) {
+  if (!value || !newPraktikum.beginnDatum) {
     return true;
   }
 
   return (
-    value >= newStudent.startDate ||
+    value >= newPraktikum.beginnDatum ||
     "Das Enddatum darf nicht vor dem Beginn liegen."
   );
 };
 
 /*
- * Schritt 1 -> Schritt 2
+ * Beim Öffnen des Dialogs alle vorhandenen
+ * Studiengänge laden.
  */
+watch(dialog, async (open) => {
+  if (open) {
+    await loadStudiengaenge();
+  }
+});
+
+async function loadStudiengaenge() {
+  studiengaengeLoading.value = true;
+
+  try {
+    availableStudiengaenge.value = await studiengangApi.getStudiengaenge();
+  } catch (e) {
+    console.debug("Studiengänge konnten nicht geladen werden:", e);
+
+    availableStudiengaenge.value = [];
+
+    error.value = "Die Studiengänge konnten nicht geladen werden.";
+  } finally {
+    studiengaengeLoading.value = false;
+  }
+}
+
 async function nextStep() {
   const result = await studentForm.value?.validate();
 
@@ -263,9 +321,6 @@ async function nextStep() {
   step.value = 2;
 }
 
-/*
- * Schritt 2 -> Schritt 3
- */
 async function nextPraktikumStep() {
   const result = await praktikumForm.value?.validate();
 
@@ -276,100 +331,95 @@ async function nextPraktikumStep() {
   step.value = 3;
 }
 
-/*
- * Student + optional Praktikum erstellen
- */
 async function createStudent() {
+  error.value = "";
   saving.value = true;
 
   try {
     /*
-     * 1. Student erstellen
-     *
-     * Rückgabewert ist die studentId.
+     * 1. Student anlegen
      */
-    const studentId = await studentApi.createStudent({
-      vorname: newStudent.firstName.trim(),
-      nachname: newStudent.lastName.trim(),
-    });
+    const studentRequest: StudentRequestDTO = {
+      vorname: newStudent.vorname.trim(),
+      nachname: newStudent.nachname.trim(),
+      email: newStudent.email.trim(),
+      wochenarbeitszeit: newStudent.wochenarbeitszeit,
+    };
+
+    const studentId = await studentApi.createStudent(studentRequest);
 
     /*
-     * 2. Prüfen, ob Praktikumsdaten eingegeben wurden.
+     * 2. Optional Praktikum anlegen
      */
     const hasPraktikumData =
-      newStudent.targetHours !== undefined ||
-      newStudent.requiredWeeks !== undefined ||
-      newStudent.startDate !== "" ||
-      newStudent.endDate !== "";
+      newPraktikum.wochenarbeitszeit !== undefined ||
+      newPraktikum.benoetigteWochen !== undefined ||
+      newPraktikum.beginnDatum !== "" ||
+      newPraktikum.endDatum !== "";
 
-    /*
-     * 3. Optional Praktikum erstellen.
-     */
     if (hasPraktikumData) {
-      await praktikumApi.createPraktikum({
+      const praktikumRequest: PraktikumRequestDTO = {
         studentId,
 
-        beginnDatum: newStudent.startDate
-          ? new Date(`${newStudent.startDate}T00:00:00`)
+        beginnDatum: newPraktikum.beginnDatum
+          ? new Date(`${newPraktikum.beginnDatum}T00:00:00`)
           : undefined,
 
-        endeDatum: newStudent.endDate
-          ? new Date(`${newStudent.endDate}T00:00:00`)
+        endDatum: newPraktikum.endDatum
+          ? new Date(`${newPraktikum.endDatum}T00:00:00`)
           : undefined,
 
-        wochenarbeitszeit: newStudent.targetHours,
+        benoetigteWochen: newPraktikum.benoetigteWochen,
 
-        benoetigteWochen: newStudent.requiredWeeks,
-      });
+        wochenarbeitszeit: newPraktikum.wochenarbeitszeit,
+      };
+
+      await praktikumApi.createPraktikum(praktikumRequest);
     }
 
     /*
-     * 4. Studiengang
-     *
-     * Der eingegebene Studiengang steht hier in:
-     *
-     * studiengang.value
-     *
-     * Sobald ein passender Backend-Endpunkt vorhanden ist,
-     * kann er hier gespeichert bzw. dem Studenten zugeordnet werden.
+     * 3. Studiengänge zuordnen
      */
+    if (selectedStudiengangIds.value.length > 0) {
+      await studiengangApi.updateStudiengaengeByStudent(studentId, {
+        studiengangIds: selectedStudiengangIds.value,
+      });
+    }
 
-    /*
-     * 5. Parent informieren.
-     */
     emit("created");
 
     close();
+  } catch (e) {
+    console.debug("Student konnte nicht erstellt werden:", e);
+
+    error.value = "Der Student konnte nicht erstellt werden.";
   } finally {
     saving.value = false;
   }
 }
 
-/*
- * Dialog schließen
- */
 function close() {
   dialog.value = false;
 
   resetForm();
 }
 
-/*
- * Formular zurücksetzen
- */
 function resetForm() {
   step.value = 1;
 
-  newStudent.firstName = "";
-  newStudent.lastName = "";
+  newStudent.vorname = "";
+  newStudent.nachname = "";
+  newStudent.email = "";
+  newStudent.wochenarbeitszeit = undefined;
 
-  newStudent.targetHours = undefined;
-  newStudent.requiredWeeks = undefined;
+  newPraktikum.wochenarbeitszeit = undefined;
+  newPraktikum.benoetigteWochen = undefined;
+  newPraktikum.beginnDatum = "";
+  newPraktikum.endDatum = "";
 
-  newStudent.startDate = "";
-  newStudent.endDate = "";
+  selectedStudiengangIds.value = [];
 
-  studiengang.value = "";
+  error.value = "";
 
   studentForm.value?.resetValidation();
   praktikumForm.value?.resetValidation();
