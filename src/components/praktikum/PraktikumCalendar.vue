@@ -8,7 +8,7 @@
       v-if="praktikum"
       v-model="selectedDate"
       :min="praktikum.beginnDatum"
-      :max="praktikum.endeDatum"
+      :max="praktikum.endDatum"
       :events="calendarEvents"
       width="100%"
     />
@@ -23,22 +23,21 @@
 </template>
 
 <script setup lang="ts">
-import type { FullPraktikumDTO } from "@/api/generated/api-spec";
+import type { PraktikumResponseDTO } from "@/api/generated/api-spec/models";
 
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
+
 const selectedDate = defineModel<Date>();
 
 const props = defineProps<{
-  praktikum?: FullPraktikumDTO;
+  praktikum?: PraktikumResponseDTO;
 }>();
 
 function toDateKey(date: Date): string {
   const year = date.getFullYear();
-
   const month = String(date.getMonth() + 1).padStart(2, "0");
-
   const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
@@ -52,17 +51,24 @@ function calendarEvents(date: string): string[] | false {
   const colors: string[] = [];
 
   const hasTaetigkeit =
-    props.praktikum.taetigkeiten?.some((taetigkeit) => {
-      const tag = taetigkeit.taetigkeitenblockID?.tag;
+    props.praktikum.taetigkeitenbloecke?.some((taetigkeit) => {
+      if (!taetigkeit.beginnDatum || !taetigkeit.endDatum) {
+        return false;
+      }
 
-      return tag !== undefined && toDateKey(tag) === date;
+      const beginn = toDateKey(taetigkeit.beginnDatum);
+      const ende = toDateKey(taetigkeit.endDatum);
+
+      return date >= beginn && date <= ende;
     }) ?? false;
 
   const hasZeitgutschrift =
     props.praktikum.zeitgutschriften?.some((zeitgutschrift) => {
-      const tag = zeitgutschrift.tag;
+      if (!zeitgutschrift.datum) {
+        return false;
+      }
 
-      return tag !== undefined && toDateKey(tag) === date;
+      return toDateKey(zeitgutschrift.datum) === date;
     }) ?? false;
 
   if (hasTaetigkeit) {

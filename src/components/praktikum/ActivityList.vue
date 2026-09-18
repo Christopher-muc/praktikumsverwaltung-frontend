@@ -72,7 +72,9 @@
           </template>
         </v-list-item>
 
-        <v-divider v-if="index < selectedTaetigkeiten.length - 1" />
+        <v-divider
+          v-if="index < selectedTaetigkeiten.length - 1"
+        />
       </template>
     </v-list>
 
@@ -88,13 +90,6 @@
       class="text-medium-emphasis"
     >
       Kein Datum ausgewählt.
-    </v-card-text>
-
-    <v-card-text
-      v-if="error"
-      class="text-error"
-    >
-      {{ error }}
     </v-card-text>
   </v-card>
 
@@ -144,73 +139,70 @@ const taetigkeitenblockApi = ApiFactory.getInstance(
 const createDialog = ref(false);
 const editDialog = ref(false);
 
-const selectedTaetigkeit = ref<TaetigkeitenblockResponseDTO | null>(null);
+const selectedTaetigkeit =
+  ref<TaetigkeitenblockResponseDTO | null>(null);
 
-const error = ref("");
+const selectedTaetigkeiten =
+  computed<TaetigkeitenblockResponseDTO[]>(() => {
+    if (!props.praktikum || !props.selectedDate) {
+      return [];
+    }
 
-const selectedTaetigkeiten = computed<TaetigkeitenblockResponseDTO[]>(() => {
-  if (!props.praktikum || !props.selectedDate) {
-    return [];
-  }
+    const selectedDate = props.selectedDate;
 
-  const selectedDate = props.selectedDate;
+    return (
+      props.praktikum.taetigkeitenbloecke?.filter(
+        (taetigkeit) => {
+          if (
+            !taetigkeit.beginnDatum ||
+            !taetigkeit.endDatum
+          ) {
+            return false;
+          }
 
-  return (
-    props.praktikum.taetigkeitenbloecke?.filter((taetigkeit) => {
-      if (!taetigkeit.beginnDatum || !taetigkeit.endDatum) {
-        return false;
-      }
-
-      return (
-        selectedDate >= taetigkeit.beginnDatum &&
-        selectedDate <= taetigkeit.endDatum
-      );
-    }) ?? []
-  );
-});
+          return (
+            selectedDate >= taetigkeit.beginnDatum &&
+            selectedDate <= taetigkeit.endDatum
+          );
+        }
+      ) ?? []
+    );
+  });
 
 function openCreateDialog() {
   if (!props.canWrite || !props.selectedDate) {
     return;
   }
 
-  error.value = "";
   createDialog.value = true;
 }
 
-function openEditDialog(taetigkeit: TaetigkeitenblockResponseDTO) {
+function openEditDialog(
+  taetigkeit: TaetigkeitenblockResponseDTO
+) {
   if (!props.canWrite) {
     return;
   }
 
-  error.value = "";
   selectedTaetigkeit.value = taetigkeit;
   editDialog.value = true;
 }
 
-async function deleteTaetigkeit(taetigkeit: TaetigkeitenblockResponseDTO) {
-  if (!props.canWrite) {
+async function deleteTaetigkeit(
+  taetigkeit: TaetigkeitenblockResponseDTO
+) {
+  if (
+    !props.canWrite ||
+    taetigkeit.taetigkeitenblockId === undefined
+  ) {
     return;
   }
 
-  if (taetigkeit.taetigkeitenblockId === undefined) {
-    error.value = "Der Tätigkeitsblock besitzt keine ID.";
-    return;
-  }
+  await taetigkeitenblockApi.deleteTaetigkeitenblock(
+    taetigkeit.taetigkeitenblockId
+  );
 
-  error.value = "";
-
-  try {
-    await taetigkeitenblockApi.deleteTaetigkeitenblock(
-      taetigkeit.taetigkeitenblockId
-    );
-
-    emit("changed");
-  } catch (e) {
-    console.debug("Tätigkeitsblock konnte nicht gelöscht werden:", e);
-
-    error.value = "Der Tätigkeitsblock konnte nicht gelöscht werden.";
-  }
+  emit("changed");
 }
 
 function handleCreated() {

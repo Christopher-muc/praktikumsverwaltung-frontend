@@ -44,18 +44,25 @@
         class="border-s"
       >
         <v-card-text>
-          <div class="text-h6 mb-2">Studiengänge</div>
+          <div class="text-h6 mb-3">Studiengänge</div>
 
-          <v-list
-            v-if="student.studiengaenge?.length"
-            density="compact"
+          <v-row
+            v-if="studiengaenge.length > 0"
+            dense
           >
-            <v-list-item
-              v-for="studiengang in student.studiengaenge"
+            <v-col
+              v-for="studiengang in studiengaenge"
               :key="studiengang.studiengangId"
-              :title="studiengang.name"
-            />
-          </v-list>
+              cols="6"
+            >
+              <v-chip
+                variant="tonal"
+                class="w-100 justify-center"
+              >
+                {{ studiengang.name }}
+              </v-chip>
+            </v-col>
+          </v-row>
 
           <div
             v-else
@@ -73,12 +80,24 @@
 import type {
   PraktikumResponseDTO,
   StudentResponseDTO,
+  StudiengangResponseDTO,
 } from "@/api/generated/api-spec/models";
+
+import { computed } from "vue";
 
 import { toDateString } from "@/util/formatter";
 
-defineProps<{
+const props = defineProps<{
   student: StudentResponseDTO;
   praktikum?: PraktikumResponseDTO;
 }>();
+
+/*
+ * Studiengänge kommen vom generierten API-Client als Set.
+ * Für die Darstellung wandeln wir sie in ein Array um
+ * und zeigen maximal 6 Einträge an.
+ */
+const studiengaenge = computed<StudiengangResponseDTO[]>(() => {
+  return Array.from(props.student.studiengaenge ?? []).slice(0, 6);
+});
 </script>

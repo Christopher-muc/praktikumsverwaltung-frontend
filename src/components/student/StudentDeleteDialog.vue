@@ -15,17 +15,9 @@
         </strong>
         wirklich löschen?
 
-        <div
-          v-if="error"
-          class="text-error mt-4"
-        >
-          {{ error }}
-        </div>
-
         <div class="d-flex justify-end ga-2 mt-6">
           <v-btn
             variant="text"
-            :disabled="deleting"
             @click="close"
           >
             Abbrechen
@@ -33,7 +25,6 @@
 
           <v-btn
             color="error"
-            :loading="deleting"
             @click="deleteStudent"
           >
             Löschen
@@ -46,8 +37,6 @@
 
 <script setup lang="ts">
 import type { StudentResponseDTO } from "@/api/generated/api-spec/models";
-
-import { ref } from "vue";
 
 import { ApiFactory } from "@/api/ApiFactory";
 import { StudentControllerApi } from "@/api/generated/api-spec";
@@ -66,36 +55,18 @@ const emit = defineEmits<{
 
 const studentApi = ApiFactory.getInstance(StudentControllerApi);
 
-const deleting = ref(false);
-const error = ref("");
-
 async function deleteStudent() {
-  error.value = "";
-
   if (props.student?.studentId === undefined) {
-    error.value = "Der Student besitzt keine ID.";
     return;
   }
 
-  deleting.value = true;
+  await studentApi.deleteStudent(props.student.studentId);
 
-  try {
-    await studentApi.deleteStudent(props.student.studentId);
-
-    emit("deleted");
-
-    close();
-  } catch (e) {
-    console.debug("Student konnte nicht gelöscht werden:", e);
-
-    error.value = "Der Student konnte nicht gelöscht werden.";
-  } finally {
-    deleting.value = false;
-  }
+  emit("deleted");
+  close();
 }
 
 function close() {
   dialog.value = false;
-  error.value = "";
 }
 </script>

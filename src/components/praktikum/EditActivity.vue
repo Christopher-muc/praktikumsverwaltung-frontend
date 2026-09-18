@@ -40,21 +40,12 @@
             type="number"
             variant="outlined"
             suffix="h"
-            min="1"
             class="mb-2"
           />
-
-          <div
-            v-if="error"
-            class="text-error mt-2"
-          >
-            {{ error }}
-          </div>
 
           <div class="d-flex justify-end ga-2 mt-6">
             <v-btn
               variant="text"
-              :disabled="saving"
               @click="close"
             >
               Abbrechen
@@ -63,7 +54,6 @@
             <v-btn
               color="primary"
               type="submit"
-              :loading="saving"
             >
               Speichern
             </v-btn>
@@ -106,9 +96,6 @@ const beginnDatum = ref("");
 const endDatum = ref("");
 const stundenanzahl = ref<number>();
 
-const saving = ref(false);
-const error = ref("");
-
 watch(
   () => props.activity,
   (activity) => {
@@ -125,8 +112,6 @@ watch(
     endDatum.value = activity.endDatum ? toDateKey(activity.endDatum) : "";
 
     stundenanzahl.value = activity.stundenanzahl;
-
-    error.value = "";
   },
   {
     immediate: true,
@@ -134,58 +119,25 @@ watch(
 );
 
 async function save() {
-  error.value = "";
-
-  if (props.activity?.taetigkeitenblockId === undefined) {
-    error.value = "Tätigkeitsblock besitzt keine ID.";
+  if (!props.activity || props.activity.taetigkeitenblockId === undefined) {
     return;
   }
 
-  if (!beschreibung.value.trim()) {
-    error.value = "Bitte eine Beschreibung eingeben.";
-    return;
-  }
+  const request: TaetigkeitenblockRequestDTO = {
+    studentId: props.activity.studentId,
+    beschreibung: beschreibung.value.trim(),
+    beginnDatum: new Date(`${beginnDatum.value}T00:00:00`),
+    endDatum: new Date(`${endDatum.value}T00:00:00`),
+    stundenanzahl: stundenanzahl.value!,
+  };
 
-  if (!beginnDatum.value || !endDatum.value) {
-    error.value = "Bitte Beginn und Ende angeben.";
-    return;
-  }
+  await taetigkeitenblockApi.updateTaetigkeitenblock(
+    props.activity.taetigkeitenblockId,
+    request
+  );
 
-  if (endDatum.value < beginnDatum.value) {
-    error.value = "Das Enddatum darf nicht vor dem Beginn liegen.";
-    return;
-  }
-
-  if (stundenanzahl.value === undefined || stundenanzahl.value <= 0) {
-    error.value = "Die Stundenanzahl muss größer als 0 sein.";
-    return;
-  }
-
-  saving.value = true;
-
-  try {
-    const request: TaetigkeitenblockRequestDTO = {
-      studentId: props.activity.studentId,
-      beschreibung: beschreibung.value.trim(),
-      beginnDatum: new Date(`${beginnDatum.value}T00:00:00`),
-      endDatum: new Date(`${endDatum.value}T00:00:00`),
-      stundenanzahl: stundenanzahl.value,
-    };
-
-    await taetigkeitenblockApi.updateTaetigkeitenblock(
-      props.activity.taetigkeitenblockId,
-      request
-    );
-
-    emit("updated");
-    close();
-  } catch (e) {
-    console.debug("Tätigkeitsblock konnte nicht aktualisiert werden:", e);
-
-    error.value = "Der Tätigkeitsblock konnte nicht gespeichert werden.";
-  } finally {
-    saving.value = false;
-  }
+  emit("updated");
+  close();
 }
 
 function toDateKey(date: Date): string {
@@ -198,6 +150,5 @@ function toDateKey(date: Date): string {
 
 function close() {
   dialog.value = false;
-  error.value = "";
 }
 </script>

@@ -24,13 +24,6 @@
         no-data-text="Keine Studiengänge vorhanden"
       />
     </template>
-
-    <div
-      v-if="error"
-      class="text-error mt-2"
-    >
-      {{ error }}
-    </div>
   </div>
 </template>
 
@@ -55,23 +48,14 @@ const studiengangApi = ApiFactory.getInstance(StudiengangControllerApi);
 const availableStudiengaenge = ref<StudiengangResponseDTO[]>([]);
 
 const optionsLoading = ref(false);
-const error = ref("");
 
 onMounted(loadAvailableStudiengaenge);
 
 async function loadAvailableStudiengaenge() {
   optionsLoading.value = true;
-  error.value = "";
 
-  try {
-    availableStudiengaenge.value = await studiengangApi.getStudiengaenge();
-  } catch (e) {
-    console.debug("Studiengänge konnten nicht geladen werden:", e);
+  availableStudiengaenge.value = await studiengangApi.getStudiengaenge();
 
-    availableStudiengaenge.value = [];
-    error.value = "Die verfügbaren Studiengänge konnten nicht geladen werden.";
-  } finally {
-    optionsLoading.value = false;
-  }
+  optionsLoading.value = false;
 }
 </script>

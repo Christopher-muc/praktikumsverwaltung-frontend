@@ -4,7 +4,6 @@
       v-model="firstName"
       label="Vorname"
       variant="outlined"
-      :rules="[required]"
       class="mb-2"
     />
 
@@ -12,7 +11,6 @@
       v-model="lastName"
       label="Nachname"
       variant="outlined"
-      :rules="[required]"
       class="mb-2"
     />
 
@@ -21,7 +19,6 @@
       label="E-Mail"
       type="email"
       variant="outlined"
-      :rules="[required]"
       class="mb-2"
     />
 
@@ -31,8 +28,6 @@
       type="number"
       variant="outlined"
       suffix="h"
-      min="1"
-      :rules="[requiredNumber]"
     />
   </div>
 </template>
@@ -53,10 +48,4 @@ const email = defineModel<string>("email", {
 const wochenarbeitszeit = defineModel<number | undefined>("wochenarbeitszeit", {
   required: true,
 });
-
-const required = (value: string) =>
-  !!value?.trim() || "Dieses Feld ist erforderlich";
-
-const requiredNumber = (value: number | undefined) =>
-  (value !== undefined && value > 0) || "Der Wert muss größer als 0 sein.";
 </script>

@@ -37,7 +37,6 @@
         type="number"
         variant="outlined"
         suffix="Stunden"
-        min="1"
         class="mb-2"
       />
 
@@ -47,15 +46,7 @@
         type="number"
         variant="outlined"
         suffix="Wochen"
-        min="1"
       />
-
-      <div
-        v-if="dateError"
-        class="text-error mt-4"
-      >
-        {{ dateError }}
-      </div>
     </template>
   </div>
 </template>
@@ -64,7 +55,6 @@
 defineProps<{
   loading: boolean;
   praktikumExists: boolean;
-  dateError: string;
 }>();
 
 const beginnDatum = defineModel<string>("beginnDatum", {

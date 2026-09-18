@@ -6,6 +6,7 @@
         class="d-flex align-center justify-start"
       >
         <v-app-bar-nav-icon
+          :class="{ invisible: showNavigation }"
           class="mx-2"
           @click="emit('clickedNavIcon')"
         />
@@ -25,6 +26,7 @@
         class="d-flex align-center justify-center"
       >
         <v-text-field
+          v-if="showNavigation"
           id="searchField"
           v-model="query"
           flat
@@ -58,6 +60,10 @@ import { useRouter } from "vue-router";
 import { useRules } from "vuetify";
 
 import ThemeToggleBtn from "@/components/common/ThemeToggleBtn.vue";
+
+defineProps<{
+  showNavigation: boolean;
+}>();
 
 const { t } = useI18n();
 const router = useRouter();
