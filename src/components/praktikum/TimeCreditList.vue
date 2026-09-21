@@ -90,14 +90,14 @@
       Kein Datum ausgewählt.
     </v-card-text>
 
-    <create-time-credit-dialog
+    <time-credit-dialog-create
       v-model="createDialog"
       :student-id="studentId"
       :selected-date="selectedDate"
       @created="handleCreated"
     />
 
-    <edit-time-credit-dialog
+    <time-credit-dialog-edit
       v-model="editDialog"
       :student-id="studentId"
       :zeitgutschrift="zeitgutschriftToEdit"
@@ -116,8 +116,8 @@ import { computed, ref } from "vue";
 
 import { ApiFactory } from "@/api/ApiFactory";
 import { ZeitgutschriftControllerApi } from "@/api/generated/api-spec";
-import CreateTimeCreditDialog from "@/components/praktikum/CreateTimeCreditDialog.vue";
-import EditTimeCreditDialog from "@/components/praktikum/EditTimeCreditDialog.vue";
+import TimeCreditDialogCreate from "@/components/praktikum/TimeCreditDialogCreate.vue";
+import TimeCreditDialogEdit from "@/components/praktikum/TimeCreditDialogEdit.vue";
 import { toDateString } from "@/util/formatter";
 
 const props = defineProps<{

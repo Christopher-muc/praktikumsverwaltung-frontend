@@ -12,39 +12,28 @@
       <v-card-text class="pa-6">
         <v-form @submit.prevent="save">
           <v-text-field
-            v-model="beschreibung"
-            label="Beschreibung"
-            variant="outlined"
-            :error-messages="validationStore.getFieldErrors('beschreibung')"
-            class="mb-2"
-          />
-
-          <v-text-field
-            v-model="beginnDatum"
+            v-model="beginnZeit"
             label="Beginn"
-            type="date"
+            type="time"
             variant="outlined"
-            :error-messages="validationStore.getFieldErrors('beginnDatum')"
+            :error-messages="validationStore.getFieldErrors('beginnZeit')"
             class="mb-2"
           />
 
           <v-text-field
-            v-model="endDatum"
+            v-model="endeZeit"
             label="Ende"
-            type="date"
+            type="time"
             variant="outlined"
-            :error-messages="validationStore.getFieldErrors('endDatum')"
+            :error-messages="validationStore.getFieldErrors('endeZeit')"
             class="mb-2"
           />
 
-          <v-text-field
-            v-model.number="stundenanzahl"
-            label="Stundenanzahl"
-            type="number"
-            variant="outlined"
-            suffix="h"
-            :error-messages="validationStore.getFieldErrors('stundenanzahl')"
-            class="mb-2"
+          <v-switch
+            v-model="homeoffice"
+            label="Homeoffice"
+            color="primary"
+            :error-messages="validationStore.getFieldErrors('homeoffice')"
           />
 
           <div class="d-flex justify-end ga-2 mt-6">
@@ -99,10 +88,9 @@ const taetigkeitenblockApi = ApiFactory.getInstance(
 
 const validationStore = useValidationStore();
 
-const beschreibung = ref("");
-const beginnDatum = ref("");
-const endDatum = ref("");
-const stundenanzahl = ref(0);
+const beginnZeit = ref("");
+const endeZeit = ref("");
+const homeoffice = ref(false);
 
 watch(
   () => props.activity,
@@ -111,15 +99,9 @@ watch(
       return;
     }
 
-    beschreibung.value = activity.beschreibung ?? "";
-
-    beginnDatum.value = activity.beginnDatum
-      ? toDateKey(activity.beginnDatum)
-      : "";
-
-    endDatum.value = activity.endDatum ? toDateKey(activity.endDatum) : "";
-
-    stundenanzahl.value = activity.stundenanzahl ?? 0;
+    beginnZeit.value = activity.beginnZeit ?? "";
+    endeZeit.value = activity.endeZeit ?? "";
+    homeoffice.value = activity.homeoffice ?? false;
   },
   {
     immediate: true,
@@ -127,33 +109,34 @@ watch(
 );
 
 async function save() {
-  if (!props.activity || props.activity.taetigkeitenblockId === undefined) {
+  if (
+    !props.activity ||
+    props.activity.studentId === undefined ||
+    props.activity.tag === undefined ||
+    props.activity.beginnZeit === undefined ||
+    props.activity.endeZeit === undefined
+  ) {
     return;
   }
 
   const request: TaetigkeitenblockRequestDTO = {
     studentId: props.studentId,
-    beschreibung: beschreibung.value.trim(),
-    beginnDatum: new Date(`${beginnDatum.value}T00:00:00`),
-    endDatum: new Date(`${endDatum.value}T00:00:00`),
-    stundenanzahl: stundenanzahl.value,
+    tag: props.activity.tag,
+    beginnZeit: beginnZeit.value,
+    endeZeit: endeZeit.value,
+    homeoffice: homeoffice.value,
   };
 
   await taetigkeitenblockApi.updateTaetigkeitenblock(
-    props.activity.taetigkeitenblockId,
+    props.activity.studentId,
+    props.activity.tag,
+    props.activity.beginnZeit,
+    props.activity.endeZeit,
     request
   );
 
   emit("updated");
   close();
-}
-
-function toDateKey(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
 }
 
 function close() {

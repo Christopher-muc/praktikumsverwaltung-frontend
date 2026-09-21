@@ -4,6 +4,7 @@ import { BASE_API_PATH, STATUS_INDICATORS } from "@/constants.ts";
 import { useSnackbarStore } from "@/stores/snackbar";
 import { useValidationStore } from "@/stores/validation";
 
+
 type ApiCtor<T extends BaseAPI> = new (config: Configuration) => T;
 
 interface ValidationErrorResponse {
@@ -23,10 +24,7 @@ async function customFetch(url: string, init?: RequestInit) {
 
   const validationStore = useValidationStore();
 
-  /*
-   * Alte Feldfehler vor einem neuen Request entfernen.
-   */
-  validationStore.clearFieldErrors();
+  validationStore.clearErrors();
 
   const response = await fetch(url, customInit);
 

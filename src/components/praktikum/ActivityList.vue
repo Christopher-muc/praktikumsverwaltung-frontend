@@ -22,28 +22,18 @@
     <v-list v-if="selectedTaetigkeiten.length">
       <template
         v-for="(taetigkeit, index) in selectedTaetigkeiten"
-        :key="taetigkeit.taetigkeitenblockId ?? index"
+        :key="`${taetigkeit.studentId}-${taetigkeit.tag}-${taetigkeit.beginnZeit}-${taetigkeit.endeZeit}`"
       >
         <v-list-item>
           <div class="d-flex align-center">
             <div>
-              {{
-                taetigkeit.beginnDatum
-                  ? toDateString(taetigkeit.beginnDatum)
-                  : "-"
-              }}
+              {{ taetigkeit.beginnZeit ?? "-" }}
               -
-              {{
-                taetigkeit.endDatum ? toDateString(taetigkeit.endDatum) : "-"
-              }}
+              {{ taetigkeit.endeZeit ?? "-" }}
             </div>
 
             <div class="flex-grow-1 text-center">
-              {{ taetigkeit.beschreibung }}
-            </div>
-
-            <div v-if="taetigkeit.stundenanzahl !== undefined">
-              {{ taetigkeit.stundenanzahl }} h
+              {{ taetigkeit.homeoffice ? "Homeoffice" : "Präsenz" }}
             </div>
           </div>
 
@@ -97,14 +87,14 @@
     </v-card-text>
   </v-card>
 
-  <create-activity
+  <activity-create
     v-model="createDialog"
     :student-id="studentId"
     :selected-date="selectedDate"
     @created="handleCreated"
   />
 
-  <edit-activity
+  <activity-edit
     v-model="editDialog"
     :student-id="studentId"
     :activity="selectedTaetigkeit"
@@ -123,8 +113,8 @@ import { computed, ref } from "vue";
 import { ApiFactory } from "@/api/ApiFactory";
 import { TaetigkeitenblockControllerApi } from "@/api/generated/api-spec";
 import { toDateString } from "@/util/formatter";
-import CreateActivity from "./CreateActivity.vue";
-import EditActivity from "./EditActivity.vue";
+import ActivityCreate from "./ActivityCreate.vue";
+import ActivityEdit from "./ActivityEdit.vue";
 
 const props = defineProps<{
   studentId: number;
@@ -151,21 +141,31 @@ const selectedTaetigkeiten = computed<TaetigkeitenblockResponseDTO[]>(() => {
     return [];
   }
 
-  const selectedDate = props.selectedDate;
-
   return (
-    props.praktikum.taetigkeitenbloecke?.filter((taetigkeit) => {
-      if (!taetigkeit.beginnDatum || !taetigkeit.endDatum) {
-        return false;
-      }
+    props.praktikum.taetigkeitenbloecke
+      ?.filter((taetigkeit) => {
+        if (!taetigkeit.tag) {
+          return false;
+        }
 
-      return (
-        selectedDate >= taetigkeit.beginnDatum &&
-        selectedDate <= taetigkeit.endDatum
-      );
-    }) ?? []
+        return isSameDate(
+          taetigkeit.tag,
+          props.selectedDate!
+        );
+      })
+      .sort((a, b) =>
+        (a.beginnZeit ?? "").localeCompare(b.beginnZeit ?? "")
+      ) ?? []
   );
 });
+
+function isSameDate(first: Date, second: Date): boolean {
+  return (
+    first.getFullYear() === second.getFullYear() &&
+    first.getMonth() === second.getMonth() &&
+    first.getDate() === second.getDate()
+  );
+}
 
 function openCreateDialog() {
   if (!props.canWrite || !props.selectedDate) {
@@ -175,7 +175,9 @@ function openCreateDialog() {
   createDialog.value = true;
 }
 
-function openEditDialog(taetigkeit: TaetigkeitenblockResponseDTO) {
+function openEditDialog(
+  taetigkeit: TaetigkeitenblockResponseDTO
+) {
   if (!props.canWrite) {
     return;
   }
@@ -184,13 +186,24 @@ function openEditDialog(taetigkeit: TaetigkeitenblockResponseDTO) {
   editDialog.value = true;
 }
 
-async function deleteTaetigkeit(taetigkeit: TaetigkeitenblockResponseDTO) {
-  if (!props.canWrite || taetigkeit.taetigkeitenblockId === undefined) {
+async function deleteTaetigkeit(
+  taetigkeit: TaetigkeitenblockResponseDTO
+) {
+  if (
+    !props.canWrite ||
+    taetigkeit.studentId === undefined ||
+    taetigkeit.tag === undefined ||
+    taetigkeit.beginnZeit === undefined ||
+    taetigkeit.endeZeit === undefined
+  ) {
     return;
   }
 
   await taetigkeitenblockApi.deleteTaetigkeitenblock(
-    taetigkeit.taetigkeitenblockId
+    taetigkeit.studentId,
+    taetigkeit.tag,
+    taetigkeit.beginnZeit,
+    taetigkeit.endeZeit
   );
 
   emit("changed");

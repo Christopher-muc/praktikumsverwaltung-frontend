@@ -110,7 +110,7 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
-    'src/routes/students/[id].vue': {
+    'src/routes/students/%5Bid%5D.vue': {
       routes:
         | '/students/[id]'
       views:
@@ -126,7 +126,7 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
-    'src/routes/studiengaenge/[id].vue': {
+    'src/routes/studiengaenge/%5Bid%5D.vue': {
       routes:
         | '/studiengaenge/[id]'
       views:
