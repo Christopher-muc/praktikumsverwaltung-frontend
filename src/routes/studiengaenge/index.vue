@@ -85,7 +85,7 @@
     </v-row>
 
     <!-- Studiengang erstellen -->
-    <CreateStudiengang
+    <create-studiengang
       v-model="createDialog"
       @created="loadStudiengaenge"
     />

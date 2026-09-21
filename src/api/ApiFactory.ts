@@ -52,22 +52,18 @@ async function handleErrorResponse(response: Response) {
 
   if (response.status === 400) {
     try {
-      const body =
-        (await response.clone().json()) as ValidationErrorResponse;
+      const body = (await response.clone().json()) as ValidationErrorResponse;
 
       /*
        * FieldErrors werden NICHT in der Snackbar angezeigt.
        * Sie werden für die Formularfelder gespeichert.
        */
-      validationStore.setFieldErrors(
-        body.errors ?? {}
-      );
+      validationStore.setFieldErrors(body.errors ?? {});
 
       /*
        * Object-/GlobalErrors gehören in die Snackbar.
        */
-      const globalMessages =
-        body.globalErrors ?? [];
+      const globalMessages = body.globalErrors ?? [];
 
       for (const message of globalMessages) {
         snackbarStore.push({
@@ -76,11 +72,9 @@ async function handleErrorResponse(response: Response) {
         });
       }
 
-      const hasFieldErrors =
-        Object.keys(body.errors ?? {}).length > 0;
+      const hasFieldErrors = Object.keys(body.errors ?? {}).length > 0;
 
-      const hasGlobalErrors =
-        globalMessages.length > 0;
+      const hasGlobalErrors = globalMessages.length > 0;
 
       if (hasFieldErrors || hasGlobalErrors) {
         return;
@@ -119,9 +113,7 @@ function createConfig(): Configuration {
   });
 }
 
-function getInstance<T extends BaseAPI>(
-  ApiClass: ApiCtor<T>
-): T {
+function getInstance<T extends BaseAPI>(ApiClass: ApiCtor<T>): T {
   const existing = instances.get(ApiClass);
 
   if (existing) {

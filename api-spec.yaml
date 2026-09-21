@@ -1,7 +1,8 @@
 openapi: 3.0.1
 info:
   title: refarch-backend
-  description: This is the default starting project for a backend project based on
+  description:
+    This is the default starting project for a backend project based on
     the reference architecture of it@M
   version: 0.0.1-SNAPSHOT
 servers:
@@ -32,7 +33,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            "*/*":
               schema:
                 $ref: "#/components/schemas/ZeitgutschriftResponseDTO"
     put:
@@ -91,7 +92,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            "*/*":
               schema:
                 $ref: "#/components/schemas/TaetigkeitenblockResponseDTO"
     put:
@@ -173,7 +174,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            "*/*":
               schema:
                 $ref: "#/components/schemas/StudentResponseDTO"
     put:
@@ -232,7 +233,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            "*/*":
               schema:
                 $ref: "#/components/schemas/PraktikumResponseDTO"
     put:
@@ -288,7 +289,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            "*/*":
               schema:
                 type: integer
                 format: int64
@@ -307,7 +308,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            "*/*":
               schema:
                 type: integer
                 format: int64
@@ -320,7 +321,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            "*/*":
               schema:
                 type: array
                 items:
@@ -339,7 +340,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            "*/*":
               schema:
                 type: integer
                 format: int64
@@ -352,7 +353,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            "*/*":
               schema:
                 type: array
                 items:
@@ -371,7 +372,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            "*/*":
               schema:
                 type: integer
                 format: int64
@@ -407,7 +408,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            "*/*":
               schema:
                 type: array
                 items:
@@ -436,7 +437,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            "*/*":
               schema:
                 type: array
                 items:
@@ -459,7 +460,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            "*/*":
               schema:
                 $ref: "#/components/schemas/StudiengangResponseDTO"
     delete:
@@ -496,7 +497,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            "*/*":
               schema:
                 type: array
                 items:
@@ -510,7 +511,7 @@ paths:
         "200":
           description: OK
           content:
-            '*/*':
+            "*/*":
               schema:
                 $ref: "#/components/schemas/StudentResponseDTO"
   /actuator:

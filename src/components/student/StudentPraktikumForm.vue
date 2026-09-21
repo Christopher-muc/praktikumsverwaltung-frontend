@@ -20,6 +20,7 @@
         label="Beginn"
         type="date"
         variant="outlined"
+        :error-messages="validationStore.getFieldErrors('beginnDatum')"
         class="mb-2"
       />
 
@@ -28,6 +29,7 @@
         label="Ende"
         type="date"
         variant="outlined"
+        :error-messages="validationStore.getFieldErrors('endDatum')"
         class="mb-2"
       />
 
@@ -37,6 +39,7 @@
         type="number"
         variant="outlined"
         suffix="Stunden"
+        :error-messages="validationStore.getFieldErrors('wochenarbeitszeit')"
         class="mb-2"
       />
 
@@ -46,16 +49,21 @@
         type="number"
         variant="outlined"
         suffix="Wochen"
+        :error-messages="validationStore.getFieldErrors('benoetigteWochen')"
       />
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useValidationStore } from "@/stores/validation";
+
 defineProps<{
   loading: boolean;
   praktikumExists: boolean;
 }>();
+
+const validationStore = useValidationStore();
 
 const beginnDatum = defineModel<string>("beginnDatum", {
   required: true,

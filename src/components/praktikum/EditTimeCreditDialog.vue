@@ -85,7 +85,7 @@ const zeitgutschriftApi = ApiFactory.getInstance(ZeitgutschriftControllerApi);
 
 const validationStore = useValidationStore();
 
-const minuten = ref<number>();
+const minuten = ref(0);
 const grund = ref("");
 
 watch(
@@ -95,7 +95,7 @@ watch(
       return;
     }
 
-    minuten.value = zeitgutschrift.minuten;
+    minuten.value = zeitgutschrift.minuten ?? 0;
     grund.value = zeitgutschrift.grund ?? "";
   },
   {
@@ -121,7 +121,7 @@ async function updateZeitgutschrift() {
   const request: ZeitgutschriftRequestDTO = {
     studentId: props.studentId,
     datum: zeitgutschrift.datum,
-    minuten: minuten.value!,
+    minuten: minuten.value,
     grund: grund.value.trim(),
   };
 

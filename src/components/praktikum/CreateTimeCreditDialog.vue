@@ -83,7 +83,7 @@ const zeitgutschriftApi = ApiFactory.getInstance(ZeitgutschriftControllerApi);
 
 const validationStore = useValidationStore();
 
-const minuten = ref<number>();
+const minuten = ref(0);
 const grund = ref("");
 
 const formattedDate = computed(() => {
@@ -102,7 +102,7 @@ async function createZeitgutschrift() {
   const request: ZeitgutschriftRequestDTO = {
     studentId: props.studentId,
     datum: props.selectedDate,
-    minuten: minuten.value!,
+    minuten: minuten.value,
     grund: grund.value.trim(),
   };
 
@@ -118,7 +118,7 @@ function close() {
 }
 
 function resetForm() {
-  minuten.value = undefined;
+  minuten.value = 0;
   grund.value = "";
 }
 </script>

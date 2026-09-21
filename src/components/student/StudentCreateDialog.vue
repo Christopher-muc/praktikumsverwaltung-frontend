@@ -220,9 +220,7 @@ const emit = defineEmits<{
 }>();
 
 const studentApi = ApiFactory.getInstance(StudentControllerApi);
-
 const praktikumApi = ApiFactory.getInstance(PraktikumControllerApi);
-
 const studiengangApi = ApiFactory.getInstance(StudiengangControllerApi);
 
 const validationStore = useValidationStore();
@@ -230,19 +228,18 @@ const validationStore = useValidationStore();
 const step = ref(1);
 
 const availableStudiengaenge = ref<StudiengangResponseDTO[]>([]);
-
 const selectedStudiengangIds = ref<number[]>([]);
 
 const newStudent = reactive({
   vorname: "",
   nachname: "",
   email: "",
-  wochenarbeitszeit: undefined as number | undefined,
+  wochenarbeitszeit: 0,
 });
 
 const newPraktikum = reactive({
-  wochenarbeitszeit: undefined as number | undefined,
-  benoetigteWochen: undefined as number | undefined,
+  wochenarbeitszeit: 0,
+  benoetigteWochen: 0,
   beginnDatum: "",
   endDatum: "",
 });
@@ -276,25 +273,21 @@ async function createStudent() {
   const studentId = await studentApi.createStudent(studentRequest);
 
   const hasPraktikumData =
-    newPraktikum.wochenarbeitszeit !== undefined ||
-    newPraktikum.benoetigteWochen !== undefined ||
+    newPraktikum.wochenarbeitszeit !== 0 ||
+    newPraktikum.benoetigteWochen !== 0 ||
     newPraktikum.beginnDatum !== "" ||
     newPraktikum.endDatum !== "";
 
-  if (hasPraktikumData) {
+  if (
+    hasPraktikumData &&
+    newPraktikum.beginnDatum !== "" &&
+    newPraktikum.endDatum !== ""
+  ) {
     const praktikumRequest: PraktikumRequestDTO = {
       studentId,
-
-      beginnDatum: newPraktikum.beginnDatum
-        ? new Date(`${newPraktikum.beginnDatum}T00:00:00`)
-        : undefined,
-
-      endDatum: newPraktikum.endDatum
-        ? new Date(`${newPraktikum.endDatum}T00:00:00`)
-        : undefined,
-
+      beginnDatum: new Date(`${newPraktikum.beginnDatum}T00:00:00`),
+      endDatum: new Date(`${newPraktikum.endDatum}T00:00:00`),
       benoetigteWochen: newPraktikum.benoetigteWochen,
-
       wochenarbeitszeit: newPraktikum.wochenarbeitszeit,
     };
 
@@ -303,7 +296,7 @@ async function createStudent() {
 
   if (selectedStudiengangIds.value.length > 0) {
     await studiengangApi.updateStudiengaengeByStudent(studentId, {
-      studiengangIds: selectedStudiengangIds.value,
+      studiengangIds: new Set(selectedStudiengangIds.value),
     });
   }
 
@@ -322,10 +315,10 @@ function resetForm() {
   newStudent.vorname = "";
   newStudent.nachname = "";
   newStudent.email = "";
-  newStudent.wochenarbeitszeit = undefined;
+  newStudent.wochenarbeitszeit = 0;
 
-  newPraktikum.wochenarbeitszeit = undefined;
-  newPraktikum.benoetigteWochen = undefined;
+  newPraktikum.wochenarbeitszeit = 0;
+  newPraktikum.benoetigteWochen = 0;
   newPraktikum.beginnDatum = "";
   newPraktikum.endDatum = "";
 

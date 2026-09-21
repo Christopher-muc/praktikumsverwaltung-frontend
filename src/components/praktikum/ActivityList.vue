@@ -27,9 +27,15 @@
         <v-list-item>
           <div class="d-flex align-center">
             <div>
-              {{ toDateString(taetigkeit.beginnDatum!) }}
+              {{
+                taetigkeit.beginnDatum
+                  ? toDateString(taetigkeit.beginnDatum)
+                  : "-"
+              }}
               -
-              {{ toDateString(taetigkeit.endDatum!) }}
+              {{
+                taetigkeit.endDatum ? toDateString(taetigkeit.endDatum) : "-"
+              }}
             </div>
 
             <div class="flex-grow-1 text-center">
@@ -72,9 +78,7 @@
           </template>
         </v-list-item>
 
-        <v-divider
-          v-if="index < selectedTaetigkeiten.length - 1"
-        />
+        <v-divider v-if="index < selectedTaetigkeiten.length - 1" />
       </template>
     </v-list>
 
@@ -93,15 +97,16 @@
     </v-card-text>
   </v-card>
 
-  <CreateActivity
+  <create-activity
     v-model="createDialog"
     :student-id="studentId"
     :selected-date="selectedDate"
     @created="handleCreated"
   />
 
-  <EditActivity
+  <edit-activity
     v-model="editDialog"
+    :student-id="studentId"
     :activity="selectedTaetigkeit"
     @updated="handleUpdated"
   />
@@ -139,35 +144,28 @@ const taetigkeitenblockApi = ApiFactory.getInstance(
 const createDialog = ref(false);
 const editDialog = ref(false);
 
-const selectedTaetigkeit =
-  ref<TaetigkeitenblockResponseDTO | null>(null);
+const selectedTaetigkeit = ref<TaetigkeitenblockResponseDTO | null>(null);
 
-const selectedTaetigkeiten =
-  computed<TaetigkeitenblockResponseDTO[]>(() => {
-    if (!props.praktikum || !props.selectedDate) {
-      return [];
-    }
+const selectedTaetigkeiten = computed<TaetigkeitenblockResponseDTO[]>(() => {
+  if (!props.praktikum || !props.selectedDate) {
+    return [];
+  }
 
-    const selectedDate = props.selectedDate;
+  const selectedDate = props.selectedDate;
 
-    return (
-      props.praktikum.taetigkeitenbloecke?.filter(
-        (taetigkeit) => {
-          if (
-            !taetigkeit.beginnDatum ||
-            !taetigkeit.endDatum
-          ) {
-            return false;
-          }
+  return (
+    props.praktikum.taetigkeitenbloecke?.filter((taetigkeit) => {
+      if (!taetigkeit.beginnDatum || !taetigkeit.endDatum) {
+        return false;
+      }
 
-          return (
-            selectedDate >= taetigkeit.beginnDatum &&
-            selectedDate <= taetigkeit.endDatum
-          );
-        }
-      ) ?? []
-    );
-  });
+      return (
+        selectedDate >= taetigkeit.beginnDatum &&
+        selectedDate <= taetigkeit.endDatum
+      );
+    }) ?? []
+  );
+});
 
 function openCreateDialog() {
   if (!props.canWrite || !props.selectedDate) {
@@ -177,9 +175,7 @@ function openCreateDialog() {
   createDialog.value = true;
 }
 
-function openEditDialog(
-  taetigkeit: TaetigkeitenblockResponseDTO
-) {
+function openEditDialog(taetigkeit: TaetigkeitenblockResponseDTO) {
   if (!props.canWrite) {
     return;
   }
@@ -188,13 +184,8 @@ function openEditDialog(
   editDialog.value = true;
 }
 
-async function deleteTaetigkeit(
-  taetigkeit: TaetigkeitenblockResponseDTO
-) {
-  if (
-    !props.canWrite ||
-    taetigkeit.taetigkeitenblockId === undefined
-  ) {
+async function deleteTaetigkeit(taetigkeit: TaetigkeitenblockResponseDTO) {
+  if (!props.canWrite || taetigkeit.taetigkeitenblockId === undefined) {
     return;
   }
 

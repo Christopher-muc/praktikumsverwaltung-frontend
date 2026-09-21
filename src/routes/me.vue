@@ -1,5 +1,5 @@
 <template>
-  <StudentDetail
+  <student-detail
     v-if="student"
     :student="student"
     :praktikum="praktikum"
@@ -31,23 +31,16 @@ import { Role } from "@/types/Role.ts";
  */
 definePage({
   meta: {
-    hasAnyRole: [
-      Role.STUDENT,
-      Role.FACHSTUDENT,
-    ],
+    hasAnyRole: [Role.STUDENT, Role.FACHSTUDENT],
   },
 });
 
 /*
  * APIs
  */
-const studentApi = ApiFactory.getInstance(
-  StudentControllerApi,
-);
+const studentApi = ApiFactory.getInstance(StudentControllerApi);
 
-const praktikumApi = ApiFactory.getInstance(
-  PraktikumControllerApi,
-);
+const praktikumApi = ApiFactory.getInstance(PraktikumControllerApi);
 
 /*
  * Berechtigungen
@@ -60,8 +53,7 @@ const praktikumApi = ApiFactory.getInstance(
  *   Tätigkeiten schreiben: ja
  *   Zeitgutschriften schreiben: ja
  */
-const canWriteZeitgutschrift =
-  useHasAnyRole(Role.FACHSTUDENT);
+const canWriteZeitgutschrift = useHasAnyRole(Role.FACHSTUDENT);
 
 /*
  * State
@@ -77,8 +69,7 @@ const praktikum = ref<PraktikumResponseDTO>();
  * Das Backend ermittelt den Studenten anhand des JWT.
  */
 async function loadStudent() {
-  student.value =
-    await studentApi.getMyStudent();
+  student.value = await studentApi.getMyStudent();
 }
 
 /*
@@ -92,16 +83,9 @@ async function loadPraktikum() {
   }
 
   try {
-    praktikum.value =
-      await praktikumApi.getPraktikum(
-        studentId,
-      );
+    praktikum.value = await praktikumApi.getPraktikum(studentId);
   } catch (e) {
-    console.debug(
-      "Kein Praktikum vorhanden:",
-      studentId,
-      e,
-    );
+    console.debug("Kein Praktikum vorhanden:", studentId, e);
 
     praktikum.value = undefined;
   }

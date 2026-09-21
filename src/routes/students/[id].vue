@@ -1,11 +1,11 @@
 <template>
-  <StudentDetail
-      v-if="student"
-      :student="student"
-      :praktikum="praktikum"
-      :can-write-activity="true"
-      :can-write-zeitgutschrift="true"
-      @changed="loadData"
+  <student-detail
+    v-if="student"
+    :student="student"
+    :praktikum="praktikum"
+    :can-write-activity="true"
+    :can-write-zeitgutschrift="true"
+    @changed="loadData"
   />
 </template>
 
@@ -42,13 +42,9 @@ const studentId = Number(route.params.id);
 /*
  * APIs
  */
-const studentApi = ApiFactory.getInstance(
-    StudentControllerApi
-);
+const studentApi = ApiFactory.getInstance(StudentControllerApi);
 
-const praktikumApi = ApiFactory.getInstance(
-    PraktikumControllerApi
-);
+const praktikumApi = ApiFactory.getInstance(PraktikumControllerApi);
 
 /*
  * State
@@ -61,8 +57,7 @@ const praktikum = ref<PraktikumResponseDTO>();
  * Student laden
  */
 async function loadStudent() {
-  student.value =
-      await studentApi.getStudent(studentId);
+  student.value = await studentApi.getStudent(studentId);
 }
 
 /*
@@ -70,14 +65,9 @@ async function loadStudent() {
  */
 async function loadPraktikum() {
   try {
-    praktikum.value =
-        await praktikumApi.getPraktikum(studentId);
+    praktikum.value = await praktikumApi.getPraktikum(studentId);
   } catch (e) {
-    console.debug(
-        "Kein Praktikum vorhanden:",
-        studentId,
-        e
-    );
+    console.debug("Kein Praktikum vorhanden:", studentId, e);
 
     praktikum.value = undefined;
   }
@@ -87,10 +77,7 @@ async function loadPraktikum() {
  * Student und Praktikum neu laden
  */
 async function loadData() {
-  await Promise.all([
-    loadStudent(),
-    loadPraktikum(),
-  ]);
+  await Promise.all([loadStudent(), loadPraktikum()]);
 }
 
 /*

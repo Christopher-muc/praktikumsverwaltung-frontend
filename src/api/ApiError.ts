@@ -7,11 +7,11 @@ export class ApiError extends Error {
   globalErrors: string[];
 
   constructor({
-                level = STATUS_INDICATORS.ERROR,
-                message = "Ein unbekannter Fehler ist aufgetreten, bitte den Administrator informieren.",
-                fieldErrors = {},
-                globalErrors = [],
-              }: {
+    level = STATUS_INDICATORS.ERROR,
+    message = "Ein unbekannter Fehler ist aufgetreten, bitte den Administrator informieren.",
+    fieldErrors = {},
+    globalErrors = [],
+  }: {
     level?: string;
     message?: string;
     fieldErrors?: Record<string, string[]>;

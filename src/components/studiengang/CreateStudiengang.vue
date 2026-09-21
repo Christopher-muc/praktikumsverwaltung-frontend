@@ -13,6 +13,7 @@
             v-model="name"
             label="Name"
             variant="outlined"
+            :error-messages="validationStore.getFieldErrors('name')"
             autofocus
           />
 
@@ -43,6 +44,7 @@ import { ref } from "vue";
 
 import { ApiFactory } from "@/api/ApiFactory";
 import { StudiengangControllerApi } from "@/api/generated/api-spec/apis";
+import { useValidationStore } from "@/stores/validation";
 
 const dialog = defineModel<boolean>({
   required: true,
@@ -53,6 +55,8 @@ const emit = defineEmits<{
 }>();
 
 const api = ApiFactory.getInstance(StudiengangControllerApi);
+
+const validationStore = useValidationStore();
 
 const name = ref("");
 

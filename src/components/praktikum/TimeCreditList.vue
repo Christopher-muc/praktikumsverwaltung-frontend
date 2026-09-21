@@ -90,14 +90,14 @@
       Kein Datum ausgewählt.
     </v-card-text>
 
-    <CreateTimeCreditDialog
+    <create-time-credit-dialog
       v-model="createDialog"
       :student-id="studentId"
       :selected-date="selectedDate"
       @created="handleCreated"
     />
 
-    <EditTimeCreditDialog
+    <edit-time-credit-dialog
       v-model="editDialog"
       :student-id="studentId"
       :zeitgutschrift="zeitgutschriftToEdit"

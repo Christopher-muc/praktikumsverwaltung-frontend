@@ -1,7 +1,7 @@
 <template>
   <div class="ma-12">
     <!-- Stammdaten -->
-    <StudentOverview
+    <student-overview
       :student="student"
       :praktikum="praktikum"
     />
@@ -10,7 +10,7 @@
     <v-row class="mt-4">
       <!-- Kalender -->
       <v-col cols="4">
-        <PraktikumCalendar
+        <praktikum-calendar
           v-model="selectedDate"
           :praktikum="praktikum"
         />
@@ -18,7 +18,7 @@
 
       <!-- Zeitgutschriften -->
       <v-col cols="4">
-        <TimeCreditList
+        <time-credit-list
           :student-id="student.studentId!"
           :praktikum="praktikum"
           :selected-date="selectedDate"
@@ -29,7 +29,7 @@
 
       <!-- Tätigkeitsblöcke -->
       <v-col cols="4">
-        <ActivityList
+        <activity-list
           :student-id="student.studentId!"
           :praktikum="praktikum"
           :selected-date="selectedDate"

@@ -63,18 +63,18 @@
     </div>
 
     <!-- Dialoge -->
-    <StudentCreateDialog
+    <student-create-dialog
       v-model="createDialog"
       @created="loadStudents"
     />
 
-    <StudentEditDialog
+    <student-edit-dialog
       v-model="editDialog"
       :student="selectedStudent"
       @updated="loadStudents"
     />
 
-    <StudentDeleteDialog
+    <student-delete-dialog
       v-model="deleteDialog"
       :student="selectedStudent"
       @deleted="loadStudents"

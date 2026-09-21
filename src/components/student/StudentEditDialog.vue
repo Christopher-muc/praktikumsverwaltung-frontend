@@ -22,7 +22,7 @@
         </v-btn-toggle>
 
         <!-- STUDENT -->
-        <StudentNameForm
+        <student-name-form
           v-if="editMode === 'student'"
           v-model:first-name="firstName"
           v-model:last-name="lastName"
@@ -31,10 +31,10 @@
         />
 
         <!-- PRAKTIKUM -->
-        <StudentPraktikumForm
+        <student-praktikum-form
           v-if="editMode === 'praktikum'"
           v-model:beginn-datum="beginnDatum"
-          v-model:ende-datum="endDatum"
+          v-model:end-datum="endDatum"
           v-model:wochenarbeitszeit="praktikumWochenarbeitszeit"
           v-model:benoetigte-wochen="benoetigteWochen"
           :loading="praktikumLoading"
@@ -42,7 +42,7 @@
         />
 
         <!-- STUDIENGÄNGE -->
-        <StudentStudiengaengeForm
+        <student-studiengaenge-form
           v-if="editMode === 'studiengang'"
           v-model="studiengaenge"
           :loading="studiengaengeLoading"
@@ -115,16 +115,16 @@ const firstName = ref("");
 const lastName = ref("");
 const email = ref("");
 
-const studentWochenarbeitszeit = ref<number | undefined>();
+const studentWochenarbeitszeit = ref(0);
 
 const praktikum = ref<PraktikumResponseDTO | null>(null);
 
 const beginnDatum = ref("");
 const endDatum = ref("");
 
-const praktikumWochenarbeitszeit = ref<number | undefined>();
+const praktikumWochenarbeitszeit = ref(0);
 
-const benoetigteWochen = ref<number | undefined>();
+const benoetigteWochen = ref(0);
 
 const studiengaenge = ref<StudiengangResponseDTO[]>([]);
 
@@ -142,7 +142,7 @@ watch(
     lastName.value = student.nachname ?? "";
     email.value = student.email ?? "";
 
-    studentWochenarbeitszeit.value = student.wochenarbeitszeit;
+    studentWochenarbeitszeit.value = student.wochenarbeitszeit ?? 0;
 
     editMode.value = "student";
 
@@ -174,9 +174,9 @@ async function loadPraktikum() {
 
     endDatum.value = toDateInputValue(loadedPraktikum.endDatum);
 
-    praktikumWochenarbeitszeit.value = loadedPraktikum.wochenarbeitszeit;
+    praktikumWochenarbeitszeit.value = loadedPraktikum.wochenarbeitszeit ?? 0;
 
-    benoetigteWochen.value = loadedPraktikum.benoetigteWochen;
+    benoetigteWochen.value = loadedPraktikum.benoetigteWochen ?? 0;
   } catch {
     praktikum.value = null;
     resetPraktikumFields();
@@ -238,19 +238,15 @@ async function savePraktikum() {
     return;
   }
 
+  if (!beginnDatum.value || !endDatum.value) {
+    return;
+  }
+
   const request: PraktikumRequestDTO = {
     studentId: props.student.studentId,
-
-    beginnDatum: beginnDatum.value
-      ? new Date(`${beginnDatum.value}T00:00:00`)
-      : undefined,
-
-    endDatum: endDatum.value
-      ? new Date(`${endDatum.value}T00:00:00`)
-      : undefined,
-
+    beginnDatum: new Date(`${beginnDatum.value}T00:00:00`),
+    endDatum: new Date(`${endDatum.value}T00:00:00`),
     wochenarbeitszeit: praktikumWochenarbeitszeit.value,
-
     benoetigteWochen: benoetigteWochen.value,
   };
 
@@ -274,7 +270,7 @@ async function saveStudiengaenge() {
     .filter((id): id is number => id !== undefined);
 
   await studiengangApi.updateStudiengaengeByStudent(props.student.studentId, {
-    studiengangIds,
+    studiengangIds: new Set(studiengangIds),
   });
 
   emit("updated");
@@ -292,10 +288,8 @@ function toDateInputValue(value: Date | undefined): string {
 function resetPraktikumFields() {
   beginnDatum.value = "";
   endDatum.value = "";
-
-  praktikumWochenarbeitszeit.value = undefined;
-
-  benoetigteWochen.value = undefined;
+  praktikumWochenarbeitszeit.value = 0;
+  benoetigteWochen.value = 0;
 }
 
 function close() {
