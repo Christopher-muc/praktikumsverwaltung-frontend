@@ -6,7 +6,7 @@
   >
     <v-card rounded="xl">
       <v-card-title class="pa-6 pb-2">
-        Tätigkeitsblock bearbeiten
+        Tätigkeitsblock hinzufügen
       </v-card-title>
 
       <v-card-text class="pa-6">
@@ -58,12 +58,9 @@
 </template>
 
 <script setup lang="ts">
-import type {
-  TaetigkeitenblockRequestDTO,
-  TaetigkeitenblockResponseDTO,
-} from "@/api/generated/api-spec/models";
+import type { TaetigkeitenblockRequestDTO } from "@/api/generated/api-spec/models";
 
-import { ref, watch } from "vue";
+import { ref } from "vue";
 
 import { ApiFactory } from "@/api/ApiFactory";
 import { TaetigkeitenblockControllerApi } from "@/api/generated/api-spec/apis";
@@ -75,11 +72,11 @@ const dialog = defineModel<boolean>({
 
 const props = defineProps<{
   studentId: number;
-  activity: TaetigkeitenblockResponseDTO | null;
+  selectedDate: Date | null;
 }>();
 
 const emit = defineEmits<{
-  updated: [];
+  created: [];
 }>();
 
 const taetigkeitenblockApi = ApiFactory.getInstance(
@@ -92,54 +89,32 @@ const beginnZeit = ref("");
 const endeZeit = ref("");
 const homeoffice = ref(false);
 
-watch(
-  () => props.activity,
-  (activity) => {
-    if (!activity) {
-      return;
-    }
-
-    beginnZeit.value = activity.beginnZeit ?? "";
-    endeZeit.value = activity.endeZeit ?? "";
-    homeoffice.value = activity.homeoffice ?? false;
-  },
-  {
-    immediate: true,
-  }
-);
-
 async function save() {
-  if (
-    !props.activity ||
-    props.activity.studentId === undefined ||
-    props.activity.tag === undefined ||
-    props.activity.beginnZeit === undefined ||
-    props.activity.endeZeit === undefined
-  ) {
+  if (!props.selectedDate) {
     return;
   }
 
   const request: TaetigkeitenblockRequestDTO = {
     studentId: props.studentId,
-    tag: props.activity.tag,
+    tag: props.selectedDate,
     beginnZeit: beginnZeit.value,
     endeZeit: endeZeit.value,
     homeoffice: homeoffice.value,
   };
 
-  await taetigkeitenblockApi.updateTaetigkeitenblock(
-    props.activity.studentId,
-    props.activity.tag,
-    props.activity.beginnZeit,
-    props.activity.endeZeit,
-    request
-  );
+  await taetigkeitenblockApi.createTaetigkeitenblock(request);
 
-  emit("updated");
+  emit("created");
   close();
 }
 
 function close() {
+  validationStore.clearFieldErrors();
+
+  beginnZeit.value = "";
+  endeZeit.value = "";
+  homeoffice.value = false;
+
   dialog.value = false;
 }
 </script>
