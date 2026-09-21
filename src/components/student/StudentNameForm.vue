@@ -4,6 +4,7 @@
       v-model="firstName"
       label="Vorname"
       variant="outlined"
+      :error-messages="validationStore.getFieldErrors('vorname')"
       class="mb-2"
     />
 
@@ -11,6 +12,7 @@
       v-model="lastName"
       label="Nachname"
       variant="outlined"
+      :error-messages="validationStore.getFieldErrors('nachname')"
       class="mb-2"
     />
 
@@ -19,6 +21,7 @@
       label="E-Mail"
       type="email"
       variant="outlined"
+      :error-messages="validationStore.getFieldErrors('email')"
       class="mb-2"
     />
 
@@ -28,11 +31,16 @@
       type="number"
       variant="outlined"
       suffix="h"
+      :error-messages="validationStore.getFieldErrors('wochenarbeitszeit')"
     />
   </div>
 </template>
 
 <script setup lang="ts">
+import { useValidationStore } from "@/stores/validation";
+
+const validationStore = useValidationStore();
+
 const firstName = defineModel<string>("firstName", {
   required: true,
 });

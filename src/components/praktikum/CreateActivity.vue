@@ -15,6 +15,7 @@
             v-model="beschreibung"
             label="Beschreibung"
             variant="outlined"
+            :error-messages="validationStore.getFieldErrors('beschreibung')"
             class="mb-2"
           />
 
@@ -23,6 +24,7 @@
             label="Beginn"
             type="date"
             variant="outlined"
+            :error-messages="validationStore.getFieldErrors('beginnDatum')"
             class="mb-2"
           />
 
@@ -31,6 +33,7 @@
             label="Ende"
             type="date"
             variant="outlined"
+            :error-messages="validationStore.getFieldErrors('endDatum')"
             class="mb-2"
           />
 
@@ -40,6 +43,7 @@
             type="number"
             variant="outlined"
             suffix="h"
+            :error-messages="validationStore.getFieldErrors('stundenanzahl')"
             class="mb-2"
           />
 
@@ -71,6 +75,7 @@ import { ref, watch } from "vue";
 
 import { ApiFactory } from "@/api/ApiFactory";
 import { TaetigkeitenblockControllerApi } from "@/api/generated/api-spec";
+import { useValidationStore } from "@/stores/validation";
 
 const dialog = defineModel<boolean>({
   default: false,
@@ -88,6 +93,8 @@ const emit = defineEmits<{
 const taetigkeitenblockApi = ApiFactory.getInstance(
   TaetigkeitenblockControllerApi
 );
+
+const validationStore = useValidationStore();
 
 const beschreibung = ref("");
 const beginnDatum = ref("");

@@ -14,6 +14,7 @@
             label="Datum"
             variant="outlined"
             readonly
+            :error-messages="validationStore.getFieldErrors('datum')"
             class="mb-2"
           />
 
@@ -23,6 +24,7 @@
             type="number"
             variant="outlined"
             suffix="min"
+            :error-messages="validationStore.getFieldErrors('minuten')"
             class="mb-2"
           />
 
@@ -30,6 +32,7 @@
             v-model="grund"
             label="Grund"
             variant="outlined"
+            :error-messages="validationStore.getFieldErrors('grund')"
             class="mb-2"
           />
 
@@ -61,6 +64,7 @@ import { computed, ref } from "vue";
 
 import { ApiFactory } from "@/api/ApiFactory";
 import { ZeitgutschriftControllerApi } from "@/api/generated/api-spec";
+import { useValidationStore } from "@/stores/validation";
 
 const dialog = defineModel<boolean>({
   default: false,
@@ -76,6 +80,8 @@ const emit = defineEmits<{
 }>();
 
 const zeitgutschriftApi = ApiFactory.getInstance(ZeitgutschriftControllerApi);
+
+const validationStore = useValidationStore();
 
 const minuten = ref<number>();
 const grund = ref("");

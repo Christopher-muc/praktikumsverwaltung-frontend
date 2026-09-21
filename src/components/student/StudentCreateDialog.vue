@@ -23,6 +23,7 @@
                 v-model="newStudent.vorname"
                 label="Vorname"
                 variant="outlined"
+                :error-messages="validationStore.getFieldErrors('vorname')"
                 class="mb-2"
                 autofocus
               />
@@ -31,6 +32,7 @@
                 v-model="newStudent.nachname"
                 label="Nachname"
                 variant="outlined"
+                :error-messages="validationStore.getFieldErrors('nachname')"
                 class="mb-2"
               />
 
@@ -39,6 +41,7 @@
                 label="E-Mail"
                 type="email"
                 variant="outlined"
+                :error-messages="validationStore.getFieldErrors('email')"
                 class="mb-2"
               />
 
@@ -48,6 +51,9 @@
                 type="number"
                 variant="outlined"
                 suffix="h"
+                :error-messages="
+                  validationStore.getFieldErrors('wochenarbeitszeit')
+                "
                 class="mb-2"
               />
 
@@ -78,6 +84,9 @@
                 type="number"
                 variant="outlined"
                 suffix="h"
+                :error-messages="
+                  validationStore.getFieldErrors('wochenarbeitszeit')
+                "
                 class="mb-2"
               />
 
@@ -86,6 +95,9 @@
                 label="Benötigte Wochen"
                 type="number"
                 variant="outlined"
+                :error-messages="
+                  validationStore.getFieldErrors('benoetigteWochen')
+                "
                 class="mb-2"
               />
 
@@ -94,6 +106,7 @@
                 label="Beginn"
                 type="date"
                 variant="outlined"
+                :error-messages="validationStore.getFieldErrors('beginnDatum')"
                 class="mb-2"
               />
 
@@ -102,6 +115,7 @@
                 label="Ende"
                 type="date"
                 variant="outlined"
+                :error-messages="validationStore.getFieldErrors('endDatum')"
               />
 
               <div class="d-flex justify-space-between mt-4">
@@ -195,6 +209,7 @@ import {
   StudentControllerApi,
   StudiengangControllerApi,
 } from "@/api/generated/api-spec";
+import { useValidationStore } from "@/stores/validation";
 
 const dialog = defineModel<boolean>({
   default: false,
@@ -209,6 +224,8 @@ const studentApi = ApiFactory.getInstance(StudentControllerApi);
 const praktikumApi = ApiFactory.getInstance(PraktikumControllerApi);
 
 const studiengangApi = ApiFactory.getInstance(StudiengangControllerApi);
+
+const validationStore = useValidationStore();
 
 const step = ref(1);
 

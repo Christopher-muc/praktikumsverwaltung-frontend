@@ -2,6 +2,7 @@ import { getSecurityHeaders } from "@/api/fetch-utils.ts";
 import { BaseAPI, Configuration } from "@/api/generated/api-spec";
 import { BASE_API_PATH, STATUS_INDICATORS } from "@/constants.ts";
 import { useSnackbarStore } from "@/stores/snackbar";
+import { useValidationStore } from "@/stores/validation";
 
 type ApiCtor<T extends BaseAPI> = new (config: Configuration) => T;
 
@@ -20,6 +21,13 @@ async function customFetch(url: string, init?: RequestInit) {
     redirect: "manual",
   };
 
+  const validationStore = useValidationStore();
+
+  /*
+   * Alte Feldfehler vor einem neuen Request entfernen.
+   */
+  validationStore.clearFieldErrors();
+
   const response = await fetch(url, customInit);
 
   if (!response.ok) {
@@ -31,6 +39,7 @@ async function customFetch(url: string, init?: RequestInit) {
 
 async function handleErrorResponse(response: Response) {
   const snackbarStore = useSnackbarStore();
+  const validationStore = useValidationStore();
 
   if (response.status === 403) {
     snackbarStore.push({
@@ -43,21 +52,37 @@ async function handleErrorResponse(response: Response) {
 
   if (response.status === 400) {
     try {
-      const body = (await response.clone().json()) as ValidationErrorResponse;
+      const body =
+        (await response.clone().json()) as ValidationErrorResponse;
 
-      const fieldMessages = Object.values(body.errors ?? {}).flat();
-      const globalMessages = body.globalErrors ?? [];
+      /*
+       * FieldErrors werden NICHT in der Snackbar angezeigt.
+       * Sie werden für die Formularfelder gespeichert.
+       */
+      validationStore.setFieldErrors(
+        body.errors ?? {}
+      );
 
-      const messages = [...fieldMessages, ...globalMessages];
+      /*
+       * Object-/GlobalErrors gehören in die Snackbar.
+       */
+      const globalMessages =
+        body.globalErrors ?? [];
 
-      for (const message of messages) {
+      for (const message of globalMessages) {
         snackbarStore.push({
           color: STATUS_INDICATORS.ERROR,
           text: message,
         });
       }
 
-      if (messages.length > 0) {
+      const hasFieldErrors =
+        Object.keys(body.errors ?? {}).length > 0;
+
+      const hasGlobalErrors =
+        globalMessages.length > 0;
+
+      if (hasFieldErrors || hasGlobalErrors) {
         return;
       }
     } catch {
@@ -94,7 +119,9 @@ function createConfig(): Configuration {
   });
 }
 
-function getInstance<T extends BaseAPI>(ApiClass: ApiCtor<T>): T {
+function getInstance<T extends BaseAPI>(
+  ApiClass: ApiCtor<T>
+): T {
   const existing = instances.get(ApiClass);
 
   if (existing) {

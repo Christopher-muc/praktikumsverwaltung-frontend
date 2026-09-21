@@ -1,8 +1,8 @@
 <template>
   <v-dialog
-    v-model="dialog"
-    max-width="500"
-    persistent
+      v-model="dialog"
+      max-width="500"
+      persistent
   >
     <v-card rounded="xl">
       <v-card-title class="pa-6 pb-2">
@@ -12,48 +12,60 @@
       <v-card-text class="pa-6">
         <v-form @submit.prevent="save">
           <v-text-field
-            v-model="beschreibung"
-            label="Beschreibung"
-            variant="outlined"
-            class="mb-2"
+              v-model="beschreibung"
+              label="Beschreibung"
+              variant="outlined"
+              :error-messages="
+              validationStore.getFieldErrors('beschreibung')
+            "
+              class="mb-2"
           />
 
           <v-text-field
-            v-model="beginnDatum"
-            label="Beginn"
-            type="date"
-            variant="outlined"
-            class="mb-2"
+              v-model="beginnDatum"
+              label="Beginn"
+              type="date"
+              variant="outlined"
+              :error-messages="
+              validationStore.getFieldErrors('beginnDatum')
+            "
+              class="mb-2"
           />
 
           <v-text-field
-            v-model="endDatum"
-            label="Ende"
-            type="date"
-            variant="outlined"
-            class="mb-2"
+              v-model="endDatum"
+              label="Ende"
+              type="date"
+              variant="outlined"
+              :error-messages="
+              validationStore.getFieldErrors('endDatum')
+            "
+              class="mb-2"
           />
 
           <v-text-field
-            v-model.number="stundenanzahl"
-            label="Stundenanzahl"
-            type="number"
-            variant="outlined"
-            suffix="h"
-            class="mb-2"
+              v-model.number="stundenanzahl"
+              label="Stundenanzahl"
+              type="number"
+              variant="outlined"
+              suffix="h"
+              :error-messages="
+              validationStore.getFieldErrors('stundenanzahl')
+            "
+              class="mb-2"
           />
 
           <div class="d-flex justify-end ga-2 mt-6">
             <v-btn
-              variant="text"
-              @click="close"
+                variant="text"
+                @click="close"
             >
               Abbrechen
             </v-btn>
 
             <v-btn
-              color="primary"
-              type="submit"
+                color="primary"
+                type="submit"
             >
               Speichern
             </v-btn>
@@ -74,6 +86,7 @@ import { ref, watch } from "vue";
 
 import { ApiFactory } from "@/api/ApiFactory";
 import { TaetigkeitenblockControllerApi } from "@/api/generated/api-spec/apis";
+import { useValidationStore } from "@/stores/validation";
 
 const dialog = defineModel<boolean>({
   default: false,
@@ -88,8 +101,10 @@ const emit = defineEmits<{
 }>();
 
 const taetigkeitenblockApi = ApiFactory.getInstance(
-  TaetigkeitenblockControllerApi
+    TaetigkeitenblockControllerApi
 );
+
+const validationStore = useValidationStore();
 
 const beschreibung = ref("");
 const beginnDatum = ref("");
@@ -97,25 +112,25 @@ const endDatum = ref("");
 const stundenanzahl = ref<number>();
 
 watch(
-  () => props.activity,
-  (activity) => {
-    if (!activity) {
-      return;
+    () => props.activity,
+    (activity) => {
+      if (!activity) {
+        return;
+      }
+
+      beschreibung.value = activity.beschreibung ?? "";
+
+      beginnDatum.value = activity.beginnDatum
+          ? toDateKey(activity.beginnDatum)
+          : "";
+
+      endDatum.value = activity.endDatum ? toDateKey(activity.endDatum) : "";
+
+      stundenanzahl.value = activity.stundenanzahl;
+    },
+    {
+      immediate: true,
     }
-
-    beschreibung.value = activity.beschreibung ?? "";
-
-    beginnDatum.value = activity.beginnDatum
-      ? toDateKey(activity.beginnDatum)
-      : "";
-
-    endDatum.value = activity.endDatum ? toDateKey(activity.endDatum) : "";
-
-    stundenanzahl.value = activity.stundenanzahl;
-  },
-  {
-    immediate: true,
-  }
 );
 
 async function save() {
@@ -132,8 +147,8 @@ async function save() {
   };
 
   await taetigkeitenblockApi.updateTaetigkeitenblock(
-    props.activity.taetigkeitenblockId,
-    request
+      props.activity.taetigkeitenblockId,
+      request
   );
 
   emit("updated");
