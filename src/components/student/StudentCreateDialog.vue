@@ -36,27 +36,6 @@
                 class="mb-2"
               />
 
-              <v-text-field
-                v-model="newStudent.email"
-                label="E-Mail"
-                type="email"
-                variant="outlined"
-                :error-messages="validationStore.getFieldErrors('email')"
-                class="mb-2"
-              />
-
-              <v-text-field
-                v-model.number="newStudent.wochenarbeitszeit"
-                label="Wochenarbeitszeit"
-                type="number"
-                variant="outlined"
-                suffix="h"
-                :error-messages="
-                  validationStore.getFieldErrors('wochenarbeitszeit')
-                "
-                class="mb-2"
-              />
-
               <div class="d-flex justify-space-between mt-4">
                 <v-btn
                   variant="text"
@@ -106,16 +85,20 @@
                 label="Beginn"
                 type="date"
                 variant="outlined"
-                :error-messages="validationStore.getFieldErrors('beginnDatum')"
+                :error-messages="
+                  validationStore.getFieldErrors('beginnDatum')
+                "
                 class="mb-2"
               />
 
               <v-text-field
-                v-model="newPraktikum.endDatum"
+                v-model="newPraktikum.endeDatum"
                 label="Ende"
                 type="date"
                 variant="outlined"
-                :error-messages="validationStore.getFieldErrors('endDatum')"
+                :error-messages="
+                  validationStore.getFieldErrors('endeDatum')
+                "
               />
 
               <div class="d-flex justify-space-between mt-4">
@@ -152,7 +135,7 @@
                 v-model="selectedStudiengangIds"
                 :items="availableStudiengaenge"
                 item-title="name"
-                item-value="studiengangId"
+                item-value="studiengangNr"
                 label="Studiengänge"
                 variant="outlined"
                 multiple
@@ -196,9 +179,8 @@
 
 <script setup lang="ts">
 import type {
-  PraktikumRequestDTO,
-  StudentRequestDTO,
-  StudiengangResponseDTO,
+  PraktikumDTO,
+  StudiengangDTO,
 } from "@/api/generated/api-spec/models";
 
 import { reactive, ref, watch } from "vue";
@@ -227,21 +209,19 @@ const validationStore = useValidationStore();
 
 const step = ref(1);
 
-const availableStudiengaenge = ref<StudiengangResponseDTO[]>([]);
+const availableStudiengaenge = ref<StudiengangDTO[]>([]);
 const selectedStudiengangIds = ref<number[]>([]);
 
 const newStudent = reactive({
   vorname: "",
   nachname: "",
-  email: "",
-  wochenarbeitszeit: 0,
 });
 
 const newPraktikum = reactive({
   wochenarbeitszeit: 0,
   benoetigteWochen: 0,
   beginnDatum: "",
-  endDatum: "",
+  endeDatum: "",
 });
 
 watch(dialog, async (open) => {
@@ -251,7 +231,8 @@ watch(dialog, async (open) => {
 });
 
 async function loadStudiengaenge() {
-  availableStudiengaenge.value = await studiengangApi.getStudiengaenge();
+  availableStudiengaenge.value =
+    await studiengangApi.getStudiengaenge();
 }
 
 function nextStep() {
@@ -263,30 +244,30 @@ function nextPraktikumStep() {
 }
 
 async function createStudent() {
-  const studentRequest: StudentRequestDTO = {
+  const studentId = await studentApi.createStudent({
     vorname: newStudent.vorname.trim(),
     nachname: newStudent.nachname.trim(),
-    email: newStudent.email.trim(),
-    wochenarbeitszeit: newStudent.wochenarbeitszeit,
-  };
-
-  const studentId = await studentApi.createStudent(studentRequest);
+  });
 
   const hasPraktikumData =
     newPraktikum.wochenarbeitszeit !== 0 ||
     newPraktikum.benoetigteWochen !== 0 ||
     newPraktikum.beginnDatum !== "" ||
-    newPraktikum.endDatum !== "";
+    newPraktikum.endeDatum !== "";
 
   if (
     hasPraktikumData &&
     newPraktikum.beginnDatum !== "" &&
-    newPraktikum.endDatum !== ""
+    newPraktikum.endeDatum !== ""
   ) {
-    const praktikumRequest: PraktikumRequestDTO = {
+    const praktikumRequest: PraktikumDTO = {
       studentId,
-      beginnDatum: new Date(`${newPraktikum.beginnDatum}T00:00:00`),
-      endDatum: new Date(`${newPraktikum.endDatum}T00:00:00`),
+      beginnDatum: new Date(
+        `${newPraktikum.beginnDatum}T00:00:00`
+      ),
+      endeDatum: new Date(
+        `${newPraktikum.endeDatum}T00:00:00`
+      ),
       benoetigteWochen: newPraktikum.benoetigteWochen,
       wochenarbeitszeit: newPraktikum.wochenarbeitszeit,
     };
@@ -295,9 +276,12 @@ async function createStudent() {
   }
 
   if (selectedStudiengangIds.value.length > 0) {
-    await studiengangApi.updateStudiengaengeByStudent(studentId, {
-      studiengangIds: new Set(selectedStudiengangIds.value),
-    });
+    // TODO: Studiengänge dem Studenten zuordnen,
+    console.log(
+      "TODO: Studiengänge zuordnen",
+      studentId,
+      selectedStudiengangIds.value
+    );
   }
 
   emit("created");
@@ -314,13 +298,11 @@ function resetForm() {
 
   newStudent.vorname = "";
   newStudent.nachname = "";
-  newStudent.email = "";
-  newStudent.wochenarbeitszeit = 0;
 
   newPraktikum.wochenarbeitszeit = 0;
   newPraktikum.benoetigteWochen = 0;
   newPraktikum.beginnDatum = "";
-  newPraktikum.endDatum = "";
+  newPraktikum.endeDatum = "";
 
   selectedStudiengangIds.value = [];
 }

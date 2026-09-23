@@ -8,7 +8,7 @@
       v-if="praktikum"
       v-model="selectedDate"
       :min="praktikum.beginnDatum"
-      :max="praktikum.endDatum"
+      :max="praktikum.endeDatum"
       :events="calendarEvents"
       width="100%"
     />
@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import type { PraktikumResponseDTO } from "@/api/generated/api-spec/models";
+import type { FullPraktikumDTO } from "@/api/generated/api-spec/models";
 
 import { useI18n } from "vue-i18n";
 
@@ -32,7 +32,7 @@ const { t } = useI18n();
 const selectedDate = defineModel<Date>();
 
 const props = defineProps<{
-  praktikum?: PraktikumResponseDTO;
+  praktikum?: FullPraktikumDTO;
 }>();
 
 function toDateKey(date: Date): string {
@@ -51,24 +51,23 @@ function calendarEvents(date: string): string[] | false {
   const colors: string[] = [];
 
   const hasTaetigkeit =
-    props.praktikum.taetigkeitenbloecke?.some((taetigkeit) => {
-      if (!taetigkeit.beginnDatum || !taetigkeit.endDatum) {
+    props.praktikum.taetigkeiten?.some((taetigkeit) => {
+      const tag = taetigkeit.taetigkeitenblockID?.tag;
+
+      if (!tag) {
         return false;
       }
 
-      const beginn = toDateKey(taetigkeit.beginnDatum);
-      const ende = toDateKey(taetigkeit.endDatum);
-
-      return date >= beginn && date <= ende;
+      return toDateKey(tag) === date;
     }) ?? false;
 
   const hasZeitgutschrift =
     props.praktikum.zeitgutschriften?.some((zeitgutschrift) => {
-      if (!zeitgutschrift.datum) {
+      if (!zeitgutschrift.tag) {
         return false;
       }
 
-      return toDateKey(zeitgutschrift.datum) === date;
+      return toDateKey(zeitgutschrift.tag) === date;
     }) ?? false;
 
   if (hasTaetigkeit) {
@@ -79,6 +78,6 @@ function calendarEvents(date: string): string[] | false {
     colors.push("yellow");
   }
 
-  return colors.length ? colors : false;
+  return colors.length > 0 ? colors : false;
 }
 </script>

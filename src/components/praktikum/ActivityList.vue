@@ -22,14 +22,14 @@
     <v-list v-if="selectedTaetigkeiten.length">
       <template
         v-for="(taetigkeit, index) in selectedTaetigkeiten"
-        :key="`${taetigkeit.studentId}-${taetigkeit.tag}-${taetigkeit.beginnZeit}-${taetigkeit.endeZeit}`"
+        :key="`${taetigkeit.taetigkeitenblockID?.studentId}-${taetigkeit.taetigkeitenblockID?.tag}-${taetigkeit.taetigkeitenblockID?.beginnZeit}-${taetigkeit.taetigkeitenblockID?.endeZeit}`"
       >
         <v-list-item>
           <div class="d-flex align-center">
             <div>
-              {{ taetigkeit.beginnZeit ?? "-" }}
+              {{ taetigkeit.taetigkeitenblockID?.beginnZeit ?? "-" }}
               -
-              {{ taetigkeit.endeZeit ?? "-" }}
+              {{ taetigkeit.taetigkeitenblockID?.endeZeit ?? "-" }}
             </div>
 
             <div class="flex-grow-1 text-center">
@@ -90,7 +90,7 @@
   <activity-create
     v-model="createDialog"
     :student-id="studentId"
-    :selected-date="selectedDate"
+    :selected-date="selectedDate ?? null"
     @created="handleCreated"
   />
 
@@ -104,8 +104,8 @@
 
 <script setup lang="ts">
 import type {
-  PraktikumResponseDTO,
-  TaetigkeitenblockResponseDTO,
+  FullPraktikumDTO,
+  TaetigkeitenblockDTO,
 } from "@/api/generated/api-spec/models";
 
 import { computed, ref } from "vue";
@@ -118,7 +118,7 @@ import ActivityEdit from "./ActivityEdit.vue";
 
 const props = defineProps<{
   studentId: number;
-  praktikum?: PraktikumResponseDTO;
+  praktikum?: FullPraktikumDTO;
   selectedDate?: Date;
   canWrite: boolean;
 }>();
@@ -134,28 +134,32 @@ const taetigkeitenblockApi = ApiFactory.getInstance(
 const createDialog = ref(false);
 const editDialog = ref(false);
 
-const selectedTaetigkeit = ref<TaetigkeitenblockResponseDTO | null>(null);
+const selectedTaetigkeit = ref<TaetigkeitenblockDTO | null>(null);
 
-const selectedTaetigkeiten = computed<TaetigkeitenblockResponseDTO[]>(() => {
-  if (!props.praktikum || !props.selectedDate) {
+const selectedTaetigkeiten = computed<TaetigkeitenblockDTO[]>(() => {
+  const selectedDate = props.selectedDate;
+
+  if (!props.praktikum || !selectedDate) {
     return [];
   }
 
   return (
-    props.praktikum.taetigkeitenbloecke
+    props.praktikum.taetigkeiten
       ?.filter((taetigkeit) => {
-        if (!taetigkeit.tag) {
+        const tag = taetigkeit.taetigkeitenblockID?.tag;
+
+        if (!tag) {
           return false;
         }
 
-        return isSameDate(
-          taetigkeit.tag,
-          props.selectedDate!
-        );
+        return isSameDate(tag, selectedDate);
       })
-      .sort((a, b) =>
-        (a.beginnZeit ?? "").localeCompare(b.beginnZeit ?? "")
-      ) ?? []
+      .sort((a, b) => {
+        const first = a.taetigkeitenblockID?.beginnZeit ?? "";
+        const second = b.taetigkeitenblockID?.beginnZeit ?? "";
+
+        return first.localeCompare(second);
+      }) ?? []
   );
 });
 
@@ -175,9 +179,7 @@ function openCreateDialog() {
   createDialog.value = true;
 }
 
-function openEditDialog(
-  taetigkeit: TaetigkeitenblockResponseDTO
-) {
+function openEditDialog(taetigkeit: TaetigkeitenblockDTO) {
   if (!props.canWrite) {
     return;
   }
@@ -186,24 +188,27 @@ function openEditDialog(
   editDialog.value = true;
 }
 
-async function deleteTaetigkeit(
-  taetigkeit: TaetigkeitenblockResponseDTO
-) {
+async function deleteTaetigkeit(taetigkeit: TaetigkeitenblockDTO) {
+  if (!props.canWrite) {
+    return;
+  }
+
+  const id = taetigkeit.taetigkeitenblockID;
+
   if (
-    !props.canWrite ||
-    taetigkeit.studentId === undefined ||
-    taetigkeit.tag === undefined ||
-    taetigkeit.beginnZeit === undefined ||
-    taetigkeit.endeZeit === undefined
+    id?.studentId === undefined ||
+    id.tag === undefined ||
+    id.beginnZeit === undefined ||
+    id.endeZeit === undefined
   ) {
     return;
   }
 
   await taetigkeitenblockApi.deleteTaetigkeitenblock(
-    taetigkeit.studentId,
-    taetigkeit.tag,
-    taetigkeit.beginnZeit,
-    taetigkeit.endeZeit
+    id.studentId,
+    id.beginnZeit,
+    id.endeZeit,
+    id.tag
   );
 
   emit("changed");
@@ -219,4 +224,5 @@ function handleUpdated() {
   selectedTaetigkeit.value = null;
   emit("changed");
 }
+
 </script>

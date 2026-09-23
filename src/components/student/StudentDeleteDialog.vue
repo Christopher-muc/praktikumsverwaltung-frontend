@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import type { StudentResponseDTO } from "@/api/generated/api-spec/models";
+import type { SimpleStudentDTO } from "@/api/generated/api-spec/models";
 
 import { ApiFactory } from "@/api/ApiFactory";
 import { StudentControllerApi } from "@/api/generated/api-spec";
@@ -46,7 +46,7 @@ const dialog = defineModel<boolean>({
 });
 
 const props = defineProps<{
-  student: StudentResponseDTO | null;
+  student: SimpleStudentDTO | null;
 }>();
 
 const emit = defineEmits<{
@@ -56,11 +56,13 @@ const emit = defineEmits<{
 const studentApi = ApiFactory.getInstance(StudentControllerApi);
 
 async function deleteStudent() {
-  if (props.student?.studentId === undefined) {
+  const studentId = props.student?.studentId;
+
+  if (studentId === undefined) {
     return;
   }
 
-  await studentApi.deleteStudent(props.student.studentId);
+  await studentApi.deleteStudent(studentId);
 
   emit("deleted");
   close();

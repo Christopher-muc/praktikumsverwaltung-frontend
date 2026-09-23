@@ -7,7 +7,10 @@
     />
 
     <!-- Praktikum -->
-    <v-row class="mt-4">
+    <v-row
+      v-if="student.studentId !== undefined"
+      class="mt-4"
+    >
       <!-- Kalender -->
       <v-col cols="4">
         <praktikum-calendar
@@ -19,7 +22,7 @@
       <!-- Zeitgutschriften -->
       <v-col cols="4">
         <time-credit-list
-          :student-id="student.studentId!"
+          :student-id="student.studentId"
           :praktikum="praktikum"
           :selected-date="selectedDate"
           :can-write="canWriteZeitgutschrift"
@@ -30,7 +33,7 @@
       <!-- Tätigkeitsblöcke -->
       <v-col cols="4">
         <activity-list
-          :student-id="student.studentId!"
+          :student-id="student.studentId"
           :praktikum="praktikum"
           :selected-date="selectedDate"
           :can-write="canWriteActivity"
@@ -43,8 +46,8 @@
 
 <script setup lang="ts">
 import type {
-  PraktikumResponseDTO,
-  StudentResponseDTO,
+  FullPraktikumDTO,
+  StudentDTO,
 } from "@/api/generated/api-spec/models";
 
 import { ref, watch } from "vue";
@@ -55,8 +58,8 @@ import TimeCreditList from "@/components/praktikum/TimeCreditList.vue";
 import StudentOverview from "@/components/student/StudentOverview.vue";
 
 const props = defineProps<{
-  student: StudentResponseDTO;
-  praktikum?: PraktikumResponseDTO;
+  student: StudentDTO;
+  praktikum?: FullPraktikumDTO;
   canWriteActivity: boolean;
   canWriteZeitgutschrift: boolean;
 }>();
@@ -67,10 +70,6 @@ const emit = defineEmits<{
 
 const selectedDate = ref<Date>();
 
-/*
- * Wenn das Praktikum geladen wird,
- * automatisch den Praktikumsbeginn auswählen.
- */
 watch(
   () => props.praktikum,
   (praktikum) => {

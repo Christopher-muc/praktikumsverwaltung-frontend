@@ -83,23 +83,18 @@
 </template>
 
 <script setup lang="ts">
-import type { StudentResponseDTO } from "@/api/generated/api-spec/models";
+import type { SimpleStudentDTO } from "@/api/generated/api-spec/models";
 
 import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 
-import { ApiFactory } from "@/api/ApiFactory.ts";
+import { ApiFactory } from "@/api/ApiFactory";
 import { StudentControllerApi } from "@/api/generated/api-spec";
 import StudentCreateDialog from "@/components/student/StudentCreateDialog.vue";
 import StudentDeleteDialog from "@/components/student/StudentDeleteDialog.vue";
 import StudentEditDialog from "@/components/student/StudentEditDialog.vue";
-import { Role } from "@/types/Role.ts";
+import { Role } from "@/types/Role";
 
-/*
- * Route
- *
- * Nur ADMIN darf die Studentenverwaltung aufrufen.
- */
 definePage({
   meta: {
     hasAnyRole: [Role.ADMIN],
@@ -108,27 +103,16 @@ definePage({
 
 const route = useRoute();
 
-/*
- * API
- */
 const studentApi = ApiFactory.getInstance(StudentControllerApi);
 
-/*
- * Studentenliste
- */
-const students = ref<StudentResponseDTO[]>([]);
+const students = ref<SimpleStudentDTO[]>([]);
 
 async function loadStudents() {
-  students.value = await studentApi.getStudents();
+  students.value = await studentApi.getAllStudents();
 }
 
-onMounted(async () => {
-  await loadStudents();
-});
+onMounted(loadStudents);
 
-/*
- * Suche
- */
 const filteredStudents = computed(() => {
   const search = String(route.query.search ?? "")
     .trim()
@@ -147,21 +131,18 @@ const filteredStudents = computed(() => {
   });
 });
 
-/*
- * Dialoge
- */
 const createDialog = ref(false);
 const editDialog = ref(false);
 const deleteDialog = ref(false);
 
-const selectedStudent = ref<StudentResponseDTO | null>(null);
+const selectedStudent = ref<SimpleStudentDTO | null>(null);
 
-function openEditDialog(student: StudentResponseDTO) {
+function openEditDialog(student: SimpleStudentDTO) {
   selectedStudent.value = student;
   editDialog.value = true;
 }
 
-function openDeleteDialog(student: StudentResponseDTO) {
+function openDeleteDialog(student: SimpleStudentDTO) {
   selectedStudent.value = student;
   deleteDialog.value = true;
 }

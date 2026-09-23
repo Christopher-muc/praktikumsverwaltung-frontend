@@ -13,7 +13,7 @@
         v-model="studiengaenge"
         :items="availableStudiengaenge"
         item-title="name"
-        item-value="studiengangId"
+        item-value="studiengangNr"
         label="Studiengänge"
         variant="outlined"
         multiple
@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import type { StudiengangResponseDTO } from "@/api/generated/api-spec/models";
+import type { StudiengangDTO } from "@/api/generated/api-spec/models";
 
 import { onMounted, ref } from "vue";
 
@@ -39,13 +39,13 @@ defineProps<{
   loading: boolean;
 }>();
 
-const studiengaenge = defineModel<StudiengangResponseDTO[]>({
+const studiengaenge = defineModel<StudiengangDTO[]>({
   required: true,
 });
 
 const studiengangApi = ApiFactory.getInstance(StudiengangControllerApi);
 
-const availableStudiengaenge = ref<StudiengangResponseDTO[]>([]);
+const availableStudiengaenge = ref<StudiengangDTO[]>([]);
 
 const optionsLoading = ref(false);
 

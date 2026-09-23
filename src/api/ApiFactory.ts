@@ -39,6 +39,10 @@ async function handleErrorResponse(response: Response) {
   const snackbarStore = useSnackbarStore();
   const validationStore = useValidationStore();
 
+  if (response.status === 404) {
+    return;
+  }
+
   if (response.status === 403) {
     snackbarStore.push({
       color: STATUS_INDICATORS.ERROR,

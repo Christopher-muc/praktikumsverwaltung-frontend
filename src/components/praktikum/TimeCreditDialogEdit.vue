@@ -14,7 +14,7 @@
             label="Datum"
             variant="outlined"
             readonly
-            :error-messages="validationStore.getFieldErrors('datum')"
+            :error-messages="validationStore.getFieldErrors('tag')"
             class="mb-2"
           />
 
@@ -24,7 +24,7 @@
             type="number"
             variant="outlined"
             suffix="min"
-            :error-messages="validationStore.getFieldErrors('minuten')"
+            :error-messages="validationStore.getFieldErrors('mengeMinuten')"
             class="mb-2"
           />
 
@@ -58,8 +58,8 @@
 
 <script setup lang="ts">
 import type {
-  ZeitgutschriftRequestDTO,
-  ZeitgutschriftResponseDTO,
+  SimpleZeitgutschriftDTO,
+  ZeitgutschriftUpdateDTO,
 } from "@/api/generated/api-spec/models";
 
 import { computed, ref, watch } from "vue";
@@ -73,8 +73,8 @@ const dialog = defineModel<boolean>({
 });
 
 const props = defineProps<{
-  studentId: number;
-  zeitgutschrift: ZeitgutschriftResponseDTO | undefined;
+  praktikumId: number;
+  zeitgutschrift: SimpleZeitgutschriftDTO | undefined;
 }>();
 
 const emit = defineEmits<{
@@ -95,7 +95,7 @@ watch(
       return;
     }
 
-    minuten.value = zeitgutschrift.minuten ?? 0;
+    minuten.value = zeitgutschrift.mengeMinuten ?? 0;
     grund.value = zeitgutschrift.grund ?? "";
   },
   {
@@ -104,7 +104,7 @@ watch(
 );
 
 const formattedDate = computed(() => {
-  return props.zeitgutschrift?.datum?.toLocaleDateString("de-DE") ?? "";
+  return props.zeitgutschrift?.tag?.toLocaleDateString("de-DE") ?? "";
 });
 
 async function updateZeitgutschrift() {
@@ -112,23 +112,21 @@ async function updateZeitgutschrift() {
 
   if (
     !zeitgutschrift ||
-    zeitgutschrift.zeitgutschriftId === undefined ||
-    !zeitgutschrift.datum
+    zeitgutschrift.id === undefined ||
+    !zeitgutschrift.tag
   ) {
     return;
   }
 
-  const request: ZeitgutschriftRequestDTO = {
-    studentId: props.studentId,
-    datum: zeitgutschrift.datum,
-    minuten: minuten.value,
+  const request: ZeitgutschriftUpdateDTO = {
+    tag: zeitgutschrift.tag,
+    mengeMinuten: minuten.value,
     grund: grund.value.trim(),
+    praktikumID: props.praktikumId,
+    zeitgutschriftID: zeitgutschrift.id,
   };
 
-  await zeitgutschriftApi.updateZeitgutschrift(
-    zeitgutschrift.zeitgutschriftId,
-    request
-  );
+  await zeitgutschriftApi.updateZeitgutschrift(request);
 
   emit("updated");
   close();

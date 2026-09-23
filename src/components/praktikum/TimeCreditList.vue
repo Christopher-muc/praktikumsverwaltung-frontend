@@ -22,7 +22,7 @@
     <v-list v-if="selectedZeitgutschriften.length">
       <template
         v-for="(zeitgutschrift, index) in selectedZeitgutschriften"
-        :key="zeitgutschrift.zeitgutschriftId ?? index"
+        :key="zeitgutschrift.id ?? index"
       >
         <v-list-item>
           <div class="d-flex align-center">
@@ -37,7 +37,7 @@
               class="text-center"
               style="width: 50%"
             >
-              {{ zeitgutschrift.minuten }} min
+              {{ zeitgutschrift.mengeMinuten }} min
             </div>
           </div>
 
@@ -72,7 +72,9 @@
           </template>
         </v-list-item>
 
-        <v-divider v-if="index < selectedZeitgutschriften.length - 1" />
+        <v-divider
+          v-if="index < selectedZeitgutschriften.length - 1"
+        />
       </template>
     </v-list>
 
@@ -92,14 +94,14 @@
 
     <time-credit-dialog-create
       v-model="createDialog"
-      :student-id="studentId"
+      :praktikum-id="studentId"
       :selected-date="selectedDate"
       @created="handleCreated"
     />
 
     <time-credit-dialog-edit
       v-model="editDialog"
-      :student-id="studentId"
+      :praktikum-id="studentId"
       :zeitgutschrift="zeitgutschriftToEdit"
       @updated="handleUpdated"
     />
@@ -108,8 +110,8 @@
 
 <script setup lang="ts">
 import type {
-  PraktikumResponseDTO,
-  ZeitgutschriftResponseDTO,
+  FullPraktikumDTO,
+  SimpleZeitgutschriftDTO,
 } from "@/api/generated/api-spec/models";
 
 import { computed, ref } from "vue";
@@ -122,7 +124,7 @@ import { toDateString } from "@/util/formatter";
 
 const props = defineProps<{
   studentId: number;
-  praktikum?: PraktikumResponseDTO;
+  praktikum?: FullPraktikumDTO;
   selectedDate?: Date;
   canWrite: boolean;
 }>();
@@ -131,14 +133,16 @@ const emit = defineEmits<{
   changed: [];
 }>();
 
-const zeitgutschriftApi = ApiFactory.getInstance(ZeitgutschriftControllerApi);
+const zeitgutschriftApi = ApiFactory.getInstance(
+  ZeitgutschriftControllerApi
+);
 
 const createDialog = ref(false);
 const editDialog = ref(false);
 
-const zeitgutschriftToEdit = ref<ZeitgutschriftResponseDTO>();
+const zeitgutschriftToEdit = ref<SimpleZeitgutschriftDTO>();
 
-const selectedZeitgutschriften = computed<ZeitgutschriftResponseDTO[]>(() => {
+const selectedZeitgutschriften = computed<SimpleZeitgutschriftDTO[]>(() => {
   if (!props.praktikum || !props.selectedDate) {
     return [];
   }
@@ -147,9 +151,9 @@ const selectedZeitgutschriften = computed<ZeitgutschriftResponseDTO[]>(() => {
 
   return (
     props.praktikum.zeitgutschriften?.filter((zeitgutschrift) => {
-      const datum = zeitgutschrift.datum;
+      const tag = zeitgutschrift.tag;
 
-      return datum !== undefined && toDateKey(datum) === selectedDateKey;
+      return tag !== undefined && toDateKey(tag) === selectedDateKey;
     }) ?? []
   );
 });
@@ -162,7 +166,7 @@ function openCreateDialog() {
   createDialog.value = true;
 }
 
-function openEditDialog(zeitgutschrift: ZeitgutschriftResponseDTO) {
+function openEditDialog(zeitgutschrift: SimpleZeitgutschriftDTO) {
   if (!props.canWrite) {
     return;
   }
@@ -171,12 +175,16 @@ function openEditDialog(zeitgutschrift: ZeitgutschriftResponseDTO) {
   editDialog.value = true;
 }
 
-async function deleteZeitgutschrift(zeitgutschrift: ZeitgutschriftResponseDTO) {
-  if (!props.canWrite || zeitgutschrift.zeitgutschriftId === undefined) {
+async function deleteZeitgutschrift(
+  zeitgutschrift: SimpleZeitgutschriftDTO
+) {
+  if (!props.canWrite || zeitgutschrift.id === undefined) {
     return;
   }
 
-  await zeitgutschriftApi.deleteZeitgutschrift(zeitgutschrift.zeitgutschriftId);
+  await zeitgutschriftApi.deleteZeitgutschrift(
+    zeitgutschrift.id
+  );
 
   emit("changed");
 }

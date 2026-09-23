@@ -16,7 +16,7 @@
             <br />
 
             Praktikumsende:
-            {{ praktikum.endDatum ? toDateString(praktikum.endDatum) : "-" }}
+            {{ praktikum.endeDatum ? toDateString(praktikum.endeDatum) : "-" }}
 
             <br />
 
@@ -52,7 +52,7 @@
           >
             <v-col
               v-for="studiengang in studiengaenge"
-              :key="studiengang.studiengangId"
+              :key="studiengang.studiengangNr"
               cols="6"
             >
               <v-chip
@@ -78,9 +78,9 @@
 
 <script setup lang="ts">
 import type {
-  PraktikumResponseDTO,
-  StudentResponseDTO,
-  StudiengangResponseDTO,
+  FullPraktikumDTO,
+  StudentDTO,
+  Studiengang,
 } from "@/api/generated/api-spec/models";
 
 import { computed } from "vue";
@@ -88,16 +88,11 @@ import { computed } from "vue";
 import { toDateString } from "@/util/formatter";
 
 const props = defineProps<{
-  student: StudentResponseDTO;
-  praktikum?: PraktikumResponseDTO;
+  student: StudentDTO;
+  praktikum?: FullPraktikumDTO;
 }>();
 
-/*
- * Studiengänge kommen vom generierten API-Client als Set.
- * Für die Darstellung wandeln wir sie in ein Array um
- * und zeigen maximal 6 Einträge an.
- */
-const studiengaenge = computed<StudiengangResponseDTO[]>(() => {
+const studiengaenge = computed<Studiengang[]>(() => {
   return Array.from(props.student.studiengaenge ?? []).slice(0, 6);
 });
 </script>

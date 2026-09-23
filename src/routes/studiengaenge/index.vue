@@ -5,7 +5,9 @@
       <div>
         <h1 class="text-h4">Studiengänge</h1>
 
-        <div class="text-medium-emphasis">Übersicht aller Studiengänge</div>
+        <div class="text-medium-emphasis">
+          Übersicht aller Studiengänge
+        </div>
       </div>
 
       <v-btn
@@ -36,7 +38,7 @@
     <v-row v-else>
       <v-col
         v-for="studiengang in studiengaenge"
-        :key="studiengang.studiengangId"
+        :key="studiengang.studiengangNr"
         cols="12"
         md="6"
         lg="4"
@@ -59,7 +61,7 @@
               color="error"
               variant="outlined"
               size="small"
-              :loading="deletingId === studiengang.studiengangId"
+              :loading="deletingId === studiengang.studiengangNr"
               @click="deleteStudiengang(studiengang)"
             >
               ×
@@ -75,7 +77,7 @@
             <v-btn
               variant="text"
               append-icon="mdi-chevron-right"
-              @click="openStudiengang(studiengang.studiengangId)"
+              @click="openStudiengang(studiengang.studiengangNr)"
             >
               Studenten anzeigen
             </v-btn>
@@ -93,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import type { StudiengangResponseDTO } from "@/api/generated/api-spec/models";
+import type { StudiengangDTO } from "@/api/generated/api-spec/models";
 
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
@@ -113,7 +115,7 @@ const router = useRouter();
 
 const api = ApiFactory.getInstance(StudiengangControllerApi);
 
-const studiengaenge = ref<StudiengangResponseDTO[]>([]);
+const studiengaenge = ref<StudiengangDTO[]>([]);
 
 const loading = ref(false);
 const createDialog = ref(false);
@@ -122,37 +124,31 @@ const deletingId = ref<number>();
 async function loadStudiengaenge() {
   loading.value = true;
 
-  try {
-    studiengaenge.value = await api.getStudiengaenge();
-  } finally {
-    loading.value = false;
-  }
+  studiengaenge.value = await api.getStudiengaenge();
+
+  loading.value = false;
 }
 
-async function openStudiengang(studiengangId?: number) {
-  if (studiengangId === undefined) {
+async function openStudiengang(studiengangNr?: number) {
+  if (studiengangNr === undefined) {
     return;
   }
 
-  await router.push(`/studiengaenge/${studiengangId}`);
+  await router.push(`/studiengaenge/${studiengangNr}`);
 }
 
-async function deleteStudiengang(studiengang: StudiengangResponseDTO) {
-  if (studiengang.studiengangId === undefined) {
+async function deleteStudiengang(studiengang: StudiengangDTO) {
+  if (studiengang.studiengangNr === undefined) {
     return;
   }
 
-  deletingId.value = studiengang.studiengangId;
+  deletingId.value = studiengang.studiengangNr;
 
-  try {
-    await api.deleteStudiengang(studiengang.studiengangId);
+  await api.deleteStudiengang(studiengang.studiengangNr);
 
-    await loadStudiengaenge();
-  } catch (e) {
-    console.debug("Studiengang konnte nicht gelöscht werden:", e);
-  } finally {
-    deletingId.value = undefined;
-  }
+  await loadStudiengaenge();
+
+  deletingId.value = undefined;
 }
 
 onMounted(loadStudiengaenge);

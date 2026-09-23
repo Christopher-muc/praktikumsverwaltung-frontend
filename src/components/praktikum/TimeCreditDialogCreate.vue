@@ -14,7 +14,7 @@
             label="Datum"
             variant="outlined"
             readonly
-            :error-messages="validationStore.getFieldErrors('datum')"
+            :error-messages="validationStore.getFieldErrors('tag')"
             class="mb-2"
           />
 
@@ -24,7 +24,7 @@
             type="number"
             variant="outlined"
             suffix="min"
-            :error-messages="validationStore.getFieldErrors('minuten')"
+            :error-messages="validationStore.getFieldErrors('mengeMinuten')"
             class="mb-2"
           />
 
@@ -58,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ZeitgutschriftRequestDTO } from "@/api/generated/api-spec/models";
+import type { ZeitgutschriftCreateDTO } from "@/api/generated/api-spec/models";
 
 import { computed, ref } from "vue";
 
@@ -71,7 +71,7 @@ const dialog = defineModel<boolean>({
 });
 
 const props = defineProps<{
-  studentId: number;
+  praktikumId: number;
   selectedDate?: Date;
 }>();
 
@@ -99,11 +99,11 @@ async function createZeitgutschrift() {
     return;
   }
 
-  const request: ZeitgutschriftRequestDTO = {
-    studentId: props.studentId,
-    datum: props.selectedDate,
-    minuten: minuten.value,
+  const request: ZeitgutschriftCreateDTO = {
+    tag: props.selectedDate,
+    mengeMinuten: minuten.value,
     grund: grund.value.trim(),
+    praktikumID: props.praktikumId,
   };
 
   await zeitgutschriftApi.createZeitgutschrift(request);

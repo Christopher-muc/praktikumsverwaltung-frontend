@@ -11,8 +11,8 @@
 
 <script setup lang="ts">
 import type {
-  PraktikumResponseDTO,
-  StudentResponseDTO,
+  FullPraktikumDTO,
+  StudentDTO,
 } from "@/api/generated/api-spec/models";
 
 import { onMounted, ref } from "vue";
@@ -23,6 +23,7 @@ import {
   PraktikumControllerApi,
   StudentControllerApi,
 } from "@/api/generated/api-spec";
+import { ResponseError } from "@/api/generated/api-spec/runtime";
 import StudentDetail from "@/components/student/StudentDetail.vue";
 import { Role } from "@/types/Role.ts";
 
@@ -49,9 +50,9 @@ const praktikumApi = ApiFactory.getInstance(PraktikumControllerApi);
 /*
  * State
  */
-const student = ref<StudentResponseDTO>();
+const student = ref<StudentDTO>();
 
-const praktikum = ref<PraktikumResponseDTO>();
+const praktikum = ref<FullPraktikumDTO>();
 
 /*
  * Student laden
@@ -66,10 +67,13 @@ async function loadStudent() {
 async function loadPraktikum() {
   try {
     praktikum.value = await praktikumApi.getPraktikum(studentId);
-  } catch (e) {
-    console.debug("Kein Praktikum vorhanden:", studentId, e);
+  } catch (error) {
+    if (error instanceof ResponseError && error.response.status === 404) {
+      praktikum.value = undefined;
+      return;
+    }
 
-    praktikum.value = undefined;
+    throw error;
   }
 }
 

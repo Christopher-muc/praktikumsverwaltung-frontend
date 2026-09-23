@@ -58,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import type { TaetigkeitenblockRequestDTO } from "@/api/generated/api-spec/models";
+import type { TaetigkeitenblockCreationDTO } from "@/api/generated/api-spec/models";
 
 import { ref } from "vue";
 
@@ -94,7 +94,7 @@ async function save() {
     return;
   }
 
-  const request: TaetigkeitenblockRequestDTO = {
+  const request: TaetigkeitenblockCreationDTO = {
     studentId: props.studentId,
     tag: props.selectedDate,
     beginnZeit: beginnZeit.value,

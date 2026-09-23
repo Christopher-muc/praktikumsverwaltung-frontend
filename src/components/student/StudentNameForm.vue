@@ -15,24 +15,6 @@
       :error-messages="validationStore.getFieldErrors('nachname')"
       class="mb-2"
     />
-
-    <v-text-field
-      v-model="email"
-      label="E-Mail"
-      type="email"
-      variant="outlined"
-      :error-messages="validationStore.getFieldErrors('email')"
-      class="mb-2"
-    />
-
-    <v-text-field
-      v-model.number="wochenarbeitszeit"
-      label="Wochenarbeitszeit"
-      type="number"
-      variant="outlined"
-      suffix="h"
-      :error-messages="validationStore.getFieldErrors('wochenarbeitszeit')"
-    />
   </div>
 </template>
 
@@ -46,14 +28,6 @@ const firstName = defineModel<string>("firstName", {
 });
 
 const lastName = defineModel<string>("lastName", {
-  required: true,
-});
-
-const email = defineModel<string>("email", {
-  required: true,
-});
-
-const wochenarbeitszeit = defineModel<number | undefined>("wochenarbeitszeit", {
   required: true,
 });
 </script>

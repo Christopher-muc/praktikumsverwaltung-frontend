@@ -5,7 +5,9 @@
     persistent
   >
     <v-card rounded="xl">
-      <v-card-title class="pa-6 pb-2"> Student bearbeiten </v-card-title>
+      <v-card-title class="pa-6 pb-2">
+        Student bearbeiten
+      </v-card-title>
 
       <v-card-text class="pa-6">
         <v-btn-toggle
@@ -14,11 +16,17 @@
           divided
           class="mb-6"
         >
-          <v-btn value="student"> Student </v-btn>
+          <v-btn value="student">
+            Student
+          </v-btn>
 
-          <v-btn value="praktikum"> Praktikum </v-btn>
+          <v-btn value="praktikum">
+            Praktikum
+          </v-btn>
 
-          <v-btn value="studiengang"> Studiengang </v-btn>
+          <v-btn value="studiengang">
+            Studiengang
+          </v-btn>
         </v-btn-toggle>
 
         <!-- STUDENT -->
@@ -26,15 +34,13 @@
           v-if="editMode === 'student'"
           v-model:first-name="firstName"
           v-model:last-name="lastName"
-          v-model:email="email"
-          v-model:wochenarbeitszeit="studentWochenarbeitszeit"
         />
 
         <!-- PRAKTIKUM -->
         <student-praktikum-form
           v-if="editMode === 'praktikum'"
           v-model:beginn-datum="beginnDatum"
-          v-model:end-datum="endDatum"
+          v-model:end-datum="endeDatum"
           v-model:wochenarbeitszeit="praktikumWochenarbeitszeit"
           v-model:benoetigte-wochen="benoetigteWochen"
           :loading="praktikumLoading"
@@ -72,11 +78,11 @@
 
 <script setup lang="ts">
 import type {
-  PraktikumRequestDTO,
-  PraktikumResponseDTO,
-  StudentRequestDTO,
-  StudentResponseDTO,
-  StudiengangResponseDTO,
+  FullPraktikumDTO,
+  PraktikumDTO,
+  PraktikumUpdateDTO,
+  StudentDTO,
+  Studiengang,
 } from "@/api/generated/api-spec/models";
 
 import { ref, watch } from "vue";
@@ -85,8 +91,8 @@ import { ApiFactory } from "@/api/ApiFactory";
 import {
   PraktikumControllerApi,
   StudentControllerApi,
-  StudiengangControllerApi,
 } from "@/api/generated/api-spec";
+import { ResponseError } from "@/api/generated/api-spec/runtime";
 import StudentNameForm from "@/components/student/StudentNameForm.vue";
 import StudentPraktikumForm from "@/components/student/StudentPraktikumForm.vue";
 import StudentStudiengaengeForm from "@/components/student/StudentStudiengaengeForm.vue";
@@ -96,7 +102,7 @@ const dialog = defineModel<boolean>({
 });
 
 const props = defineProps<{
-  student: StudentResponseDTO | null;
+  student: StudentDTO | null;
 }>();
 
 const emit = defineEmits<{
@@ -104,30 +110,34 @@ const emit = defineEmits<{
 }>();
 
 const studentApi = ApiFactory.getInstance(StudentControllerApi);
-
 const praktikumApi = ApiFactory.getInstance(PraktikumControllerApi);
-
-const studiengangApi = ApiFactory.getInstance(StudiengangControllerApi);
 
 const editMode = ref<"student" | "praktikum" | "studiengang">("student");
 
+/*
+ * Student
+ */
 const firstName = ref("");
 const lastName = ref("");
-const email = ref("");
 
-const studentWochenarbeitszeit = ref(0);
-
-const praktikum = ref<PraktikumResponseDTO | null>(null);
+/*
+ * Praktikum
+ */
+const praktikum = ref<FullPraktikumDTO | null>(null);
 
 const beginnDatum = ref("");
-const endDatum = ref("");
-
+const endeDatum = ref("");
 const praktikumWochenarbeitszeit = ref(0);
-
 const benoetigteWochen = ref(0);
 
-const studiengaenge = ref<StudiengangResponseDTO[]>([]);
+/*
+ * Studiengänge
+ */
+const studiengaenge = ref<Studiengang[]>([]);
 
+/*
+ * Loading
+ */
 const praktikumLoading = ref(false);
 const studiengaengeLoading = ref(false);
 
@@ -140,13 +150,13 @@ watch(
 
     firstName.value = student.vorname ?? "";
     lastName.value = student.nachname ?? "";
-    email.value = student.email ?? "";
-
-    studentWochenarbeitszeit.value = student.wochenarbeitszeit ?? 0;
 
     editMode.value = "student";
 
-    await Promise.all([loadPraktikum(), loadStudiengaenge()]);
+    await Promise.all([
+      loadPraktikum(),
+      loadStudiengaenge(),
+    ]);
   },
   {
     immediate: true,
@@ -154,7 +164,9 @@ watch(
 );
 
 async function loadPraktikum() {
-  if (props.student?.studentId === undefined) {
+  const studentId = props.student?.studentId;
+
+  if (studentId === undefined) {
     return;
   }
 
@@ -164,39 +176,56 @@ async function loadPraktikum() {
   resetPraktikumFields();
 
   try {
-    const loadedPraktikum = await praktikumApi.getPraktikum(
-      props.student.studentId
-    );
+    const loadedPraktikum =
+      await praktikumApi.getPraktikum(studentId);
 
     praktikum.value = loadedPraktikum;
 
-    beginnDatum.value = toDateInputValue(loadedPraktikum.beginnDatum);
+    beginnDatum.value =
+      toDateInputValue(loadedPraktikum.beginnDatum);
 
-    endDatum.value = toDateInputValue(loadedPraktikum.endDatum);
+    endeDatum.value =
+      toDateInputValue(loadedPraktikum.endeDatum);
 
-    praktikumWochenarbeitszeit.value = loadedPraktikum.wochenarbeitszeit ?? 0;
+    praktikumWochenarbeitszeit.value =
+      loadedPraktikum.wochenarbeitszeit ?? 0;
 
-    benoetigteWochen.value = loadedPraktikum.benoetigteWochen ?? 0;
-  } catch {
-    praktikum.value = null;
-    resetPraktikumFields();
+    benoetigteWochen.value =
+      loadedPraktikum.benoetigteWochen ?? 0;
+  } catch (error) {
+    if (
+      error instanceof ResponseError &&
+      error.response.status === 404
+    ) {
+      praktikum.value = null;
+      return;
+    }
+
+    throw error;
   } finally {
     praktikumLoading.value = false;
   }
 }
 
 async function loadStudiengaenge() {
-  if (props.student?.studentId === undefined) {
+  const studentId = props.student?.studentId;
+
+  if (studentId === undefined) {
     return;
   }
 
   studiengaengeLoading.value = true;
 
-  const fullStudent = await studentApi.getStudent(props.student.studentId);
+  try {
+    const fullStudent =
+      await studentApi.getStudent(studentId);
 
-  studiengaenge.value = [...(fullStudent.studiengaenge ?? [])];
-
-  studiengaengeLoading.value = false;
+    studiengaenge.value = [
+      ...(fullStudent.studiengaenge ?? []),
+    ];
+  } finally {
+    studiengaengeLoading.value = false;
+  }
 }
 
 async function save() {
@@ -216,43 +245,63 @@ async function save() {
 }
 
 async function updateStudent() {
-  if (props.student?.studentId === undefined) {
+  const studentId = props.student?.studentId;
+
+  if (studentId === undefined) {
     return;
   }
 
-  const request: StudentRequestDTO = {
+  await studentApi.updateStudent(studentId, {
     vorname: firstName.value.trim(),
     nachname: lastName.value.trim(),
-    email: email.value.trim(),
-    wochenarbeitszeit: studentWochenarbeitszeit.value,
-  };
-
-  await studentApi.updateStudent(props.student.studentId, request);
+  });
 
   emit("updated");
   close();
 }
 
 async function savePraktikum() {
-  if (props.student?.studentId === undefined) {
+  const studentId = props.student?.studentId;
+
+  if (studentId === undefined) {
     return;
   }
 
-  if (!beginnDatum.value || !endDatum.value) {
+  if (!beginnDatum.value || !endeDatum.value) {
     return;
   }
-
-  const request: PraktikumRequestDTO = {
-    studentId: props.student.studentId,
-    beginnDatum: new Date(`${beginnDatum.value}T00:00:00`),
-    endDatum: new Date(`${endDatum.value}T00:00:00`),
-    wochenarbeitszeit: praktikumWochenarbeitszeit.value,
-    benoetigteWochen: benoetigteWochen.value,
-  };
 
   if (praktikum.value) {
-    await praktikumApi.updatePraktikum(props.student.studentId, request);
+    const request: PraktikumUpdateDTO = {
+      beginnDatum: new Date(
+        `${beginnDatum.value}T00:00:00`
+      ),
+      endeDatum: new Date(
+        `${endeDatum.value}T00:00:00`
+      ),
+      wochenarbeitszeit:
+      praktikumWochenarbeitszeit.value,
+      benoetigteWochen: benoetigteWochen.value,
+    };
+
+    await praktikumApi.updatePraktikum(
+      studentId,
+      request
+    );
   } else {
+    const request: PraktikumDTO = {
+      studentId,
+      beginnDatum: new Date(
+        `${beginnDatum.value}T00:00:00`
+      ),
+      endeDatum: new Date(
+        `${endeDatum.value}T00:00:00`
+      ),
+      wochenarbeitszeit:
+      praktikumWochenarbeitszeit.value,
+      benoetigteWochen: benoetigteWochen.value,
+    };
+
     await praktikumApi.createPraktikum(request);
   }
 
@@ -261,23 +310,27 @@ async function savePraktikum() {
 }
 
 async function saveStudiengaenge() {
-  if (props.student?.studentId === undefined) {
+  const studentId = props.student?.studentId;
+
+  if (studentId === undefined) {
     return;
   }
 
-  const studiengangIds = studiengaenge.value
-    .map((studiengang) => studiengang.studiengangId)
-    .filter((id): id is number => id !== undefined);
-
-  await studiengangApi.updateStudiengaengeByStudent(props.student.studentId, {
-    studiengangIds: new Set(studiengangIds),
-  });
+  // TODO: Studiengänge des Studenten aktualisieren,
+  // sobald das Backend einen entsprechenden Endpoint bereitstellt.
+  console.log(
+    "TODO: Studiengänge aktualisieren",
+    studentId,
+    studiengaenge.value
+  );
 
   emit("updated");
   close();
 }
 
-function toDateInputValue(value: Date | undefined): string {
+function toDateInputValue(
+  value: Date | undefined
+): string {
   if (!value) {
     return "";
   }
@@ -287,7 +340,7 @@ function toDateInputValue(value: Date | undefined): string {
 
 function resetPraktikumFields() {
   beginnDatum.value = "";
-  endDatum.value = "";
+  endeDatum.value = "";
   praktikumWochenarbeitszeit.value = 0;
   benoetigteWochen.value = 0;
 }

@@ -58,10 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import type {
-  TaetigkeitenblockRequestDTO,
-  TaetigkeitenblockResponseDTO,
-} from "@/api/generated/api-spec/models";
+import type { TaetigkeitenblockCreationDTO } from "@/api/generated/api-spec/models";
 
 import { ref, watch } from "vue";
 
@@ -75,7 +72,7 @@ const dialog = defineModel<boolean>({
 
 const props = defineProps<{
   studentId: number;
-  activity: TaetigkeitenblockResponseDTO | null;
+  activity: TaetigkeitenblockCreationDTO | null;
 }>();
 
 const emit = defineEmits<{
@@ -119,7 +116,7 @@ async function save() {
     return;
   }
 
-  const request: TaetigkeitenblockRequestDTO = {
+  const request: TaetigkeitenblockCreationDTO = {
     studentId: props.studentId,
     tag: props.activity.tag,
     beginnZeit: beginnZeit.value,
@@ -129,9 +126,9 @@ async function save() {
 
   await taetigkeitenblockApi.updateTaetigkeitenblock(
     props.activity.studentId,
-    props.activity.tag,
     props.activity.beginnZeit,
     props.activity.endeZeit,
+    props.activity.tag,
     request
   );
 

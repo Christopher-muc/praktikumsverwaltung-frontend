@@ -11,70 +11,55 @@
 
 <script setup lang="ts">
 import type {
-  PraktikumResponseDTO,
-  StudentResponseDTO,
+  FullPraktikumDTO,
+  StudentDTO,
 } from "@/api/generated/api-spec/models";
 
 import { onMounted, ref } from "vue";
 
-import { ApiFactory } from "@/api/ApiFactory.ts";
+import { ApiFactory } from "@/api/ApiFactory";
 import {
   PraktikumControllerApi,
   StudentControllerApi,
 } from "@/api/generated/api-spec";
+import { ResponseError } from "@/api/generated/api-spec/runtime";
 import StudentDetail from "@/components/student/StudentDetail.vue";
-import useHasAnyRole from "@/composables/useHasAnyRole.ts";
-import { Role } from "@/types/Role.ts";
+import useHasAnyRole from "@/composables/useHasAnyRole";
+import { Role } from "@/types/Role";
+import { useUserInfoStore } from "@/stores/userinfo.ts";
 
-/*
- * STUDENT und FACHSTUDENT dürfen /me öffnen.
- */
 definePage({
   meta: {
     hasAnyRole: [Role.STUDENT, Role.FACHSTUDENT],
   },
 });
 
-/*
- * APIs
- */
 const studentApi = ApiFactory.getInstance(StudentControllerApi);
-
 const praktikumApi = ApiFactory.getInstance(PraktikumControllerApi);
 
-/*
- * Berechtigungen
- *
- * STUDENT:
- *   Tätigkeiten schreiben: ja
- *   Zeitgutschriften schreiben: nein
- *
- * FACHSTUDENT:
- *   Tätigkeiten schreiben: ja
- *   Zeitgutschriften schreiben: ja
- */
 const canWriteZeitgutschrift = useHasAnyRole(Role.FACHSTUDENT);
 
-/*
- * State
- */
-const student = ref<StudentResponseDTO>();
+const student = ref<StudentDTO>();
+const praktikum = ref<FullPraktikumDTO>();
 
-const praktikum = ref<PraktikumResponseDTO>();
+const userInfoStore = useUserInfoStore();
 
-/*
- * Eigenen Studentendatensatz laden.
- *
- * Die Student-ID kommt NICHT aus der URL.
- * Das Backend ermittelt den Studenten anhand des JWT.
- */
 async function loadStudent() {
-  student.value = await studentApi.getMyStudent();
+  if (userInfoStore.userInfo === null) {
+    return;
+  }
+
+  const studentId = Number(
+    userInfoStore.userInfo.preferred_username
+  );
+
+  if (!Number.isInteger(studentId) || studentId <= 0) {
+    return;
+  }
+
+  student.value = await studentApi.getStudent(studentId);
 }
 
-/*
- * Praktikum des eigenen Studenten laden.
- */
 async function loadPraktikum() {
   const studentId = student.value?.studentId;
 
@@ -83,18 +68,21 @@ async function loadPraktikum() {
   }
 
   try {
-    praktikum.value = await praktikumApi.getPraktikum(studentId);
-  } catch (e) {
-    console.debug("Kein Praktikum vorhanden:", studentId, e);
+    praktikum.value =
+      await praktikumApi.getPraktikum(studentId);
+  } catch (error) {
+    if (
+      error instanceof ResponseError &&
+      error.response.status === 404
+    ) {
+      praktikum.value = undefined;
+      return;
+    }
 
-    praktikum.value = undefined;
+    throw error;
   }
 }
 
-/*
- * Erst Student laden, weil wir dessen ID
- * für das Praktikum benötigen.
- */
 onMounted(async () => {
   await loadStudent();
   await loadPraktikum();
