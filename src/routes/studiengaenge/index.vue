@@ -5,9 +5,7 @@
       <div>
         <h1 class="text-h4">Studiengänge</h1>
 
-        <div class="text-medium-emphasis">
-          Übersicht aller Studiengänge
-        </div>
+        <div class="text-medium-emphasis">Übersicht aller Studiengänge</div>
       </div>
 
       <v-btn
@@ -134,7 +132,12 @@ async function openStudiengang(studiengangNr?: number) {
     return;
   }
 
-  await router.push(`/studiengaenge/${studiengangNr}`);
+  await router.push({
+    path: "/students",
+    query: {
+      studiengang: studiengangNr,
+    },
+  });
 }
 
 async function deleteStudiengang(studiengang: StudiengangDTO) {

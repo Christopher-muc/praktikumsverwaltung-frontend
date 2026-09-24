@@ -91,6 +91,7 @@ import { ApiFactory } from "@/api/ApiFactory";
 import {
   PraktikumControllerApi,
   StudentControllerApi,
+  StudiumControllerApi,
 } from "@/api/generated/api-spec";
 import { ResponseError } from "@/api/generated/api-spec/runtime";
 import StudentNameForm from "@/components/student/StudentNameForm.vue";
@@ -111,6 +112,7 @@ const emit = defineEmits<{
 
 const studentApi = ApiFactory.getInstance(StudentControllerApi);
 const praktikumApi = ApiFactory.getInstance(PraktikumControllerApi);
+const studiumApi = ApiFactory.getInstance(StudiumControllerApi);
 
 const editMode = ref<"student" | "praktikum" | "studiengang">("student");
 
@@ -135,9 +137,8 @@ const benoetigteWochen = ref(0);
  */
 const studiengaenge = ref<Studiengang[]>([]);
 
-/*
- * Loading
- */
+const originalStudiengaenge = ref<Studiengang[]>([]);
+
 const praktikumLoading = ref(false);
 const studiengaengeLoading = ref(false);
 
@@ -223,6 +224,10 @@ async function loadStudiengaenge() {
     studiengaenge.value = [
       ...(fullStudent.studiengaenge ?? []),
     ];
+
+    originalStudiengaenge.value = [
+      ...(fullStudent.studiengaenge ?? []),
+    ];
   } finally {
     studiengaengeLoading.value = false;
   }
@@ -281,7 +286,8 @@ async function savePraktikum() {
       ),
       wochenarbeitszeit:
       praktikumWochenarbeitszeit.value,
-      benoetigteWochen: benoetigteWochen.value,
+      benoetigteWochen:
+      benoetigteWochen.value,
     };
 
     await praktikumApi.updatePraktikum(
@@ -299,7 +305,8 @@ async function savePraktikum() {
       ),
       wochenarbeitszeit:
       praktikumWochenarbeitszeit.value,
-      benoetigteWochen: benoetigteWochen.value,
+      benoetigteWochen:
+      benoetigteWochen.value,
     };
 
     await praktikumApi.createPraktikum(request);
@@ -316,13 +323,26 @@ async function saveStudiengaenge() {
     return;
   }
 
-  // TODO: Studiengänge des Studenten aktualisieren,
-  // sobald das Backend einen entsprechenden Endpoint bereitstellt.
-  console.log(
-    "TODO: Studiengänge aktualisieren",
-    studentId,
-    studiengaenge.value
-  );
+  for (const studiengang of studiengaenge.value) {
+    if (studiengang.studiengangNr === undefined) {
+      continue;
+    }
+
+    const alreadyExists = originalStudiengaenge.value.some(
+      (originalStudiengang) =>
+        originalStudiengang.studiengangNr ===
+        studiengang.studiengangNr
+    );
+
+    if (alreadyExists) {
+      continue;
+    }
+
+    await studiumApi.addStudiumToStudent({
+      studentId,
+      studiengangId: studiengang.studiengangNr,
+    });
+  }
 
   emit("updated");
   close();

@@ -53,7 +53,19 @@ export const useSnackbarStore = defineStore("snackbar", () => {
    * Adds default values if necessary
    */
   function push(message: SnackbarMessage) {
-    queue.value.push(applyDefaults(message));
+    const normalizedMessage = applyDefaults(message);
+
+    const alreadyQueued = queue.value.some(
+      (queuedMessage) =>
+        queuedMessage.text === normalizedMessage.text &&
+        queuedMessage.color === normalizedMessage.color
+    );
+
+    if (alreadyQueued) {
+      return;
+    }
+
+    queue.value.push(normalizedMessage);
   }
 
   return { queue, push };

@@ -39,10 +39,17 @@ async function handleErrorResponse(response: Response) {
   const snackbarStore = useSnackbarStore();
   const validationStore = useValidationStore();
 
+  /*
+   * 404 wird von den aufrufenden Komponenten behandelt.
+   * Beispiel: Student besitzt kein Praktikum.
+   */
   if (response.status === 404) {
     return;
   }
 
+  /*
+   * Fehlende Berechtigung.
+   */
   if (response.status === 403) {
     snackbarStore.push({
       color: STATUS_INDICATORS.ERROR,
@@ -52,9 +59,8 @@ async function handleErrorResponse(response: Response) {
     return;
   }
 
-  if (response.status === 400) {
-    try {
-      const body = (await response.clone().json()) as ValidationErrorResponse;
+  try {
+    const body = (await response.clone().json()) as ValidationErrorResponse;
 
       /*
        * FieldErrors werden NICHT in der Snackbar angezeigt.
@@ -67,29 +73,31 @@ async function handleErrorResponse(response: Response) {
        */
       const globalMessages = body.globalErrors ?? [];
 
-      for (const message of globalMessages) {
-        snackbarStore.push({
-          color: STATUS_INDICATORS.ERROR,
-          text: message,
-        });
-      }
-
-      const hasFieldErrors = Object.keys(body.errors ?? {}).length > 0;
-
-      const hasGlobalErrors = globalMessages.length > 0;
-
-      if (hasFieldErrors || hasGlobalErrors) {
-        return;
-      }
-    } catch {
-      // Response enthält kein erwartetes JSON-Fehlerformat.
+    for (const message of globalMessages) {
+      snackbarStore.push({
+        color: STATUS_INDICATORS.ERROR,
+        text: cleanErrorMessage(message),
+      });
     }
+
+    const hasFieldErrors = Object.keys(body.errors ?? {}).length > 0;
+    const hasGlobalErrors = globalMessages.length > 0;
+
+    if (hasFieldErrors || hasGlobalErrors) {
+      return;
+    }
+  } catch {
+    // Response enthält kein erwartetes JSON-Fehlerformat.
   }
 
   snackbarStore.push({
     color: STATUS_INDICATORS.ERROR,
     text: "Es ist ein unbekannter Fehler aufgetreten.",
   });
+}
+
+function cleanErrorMessage(message: string): string {
+  return message.replace(/^\d{3}\s+[A-Z_ ]+\s+"/, "").replace(/"$/, "");
 }
 
 function createConfig(): Configuration {

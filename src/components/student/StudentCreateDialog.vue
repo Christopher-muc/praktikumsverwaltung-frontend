@@ -85,9 +85,7 @@
                 label="Beginn"
                 type="date"
                 variant="outlined"
-                :error-messages="
-                  validationStore.getFieldErrors('beginnDatum')
-                "
+                :error-messages="validationStore.getFieldErrors('beginnDatum')"
                 class="mb-2"
               />
 
@@ -96,9 +94,7 @@
                 label="Ende"
                 type="date"
                 variant="outlined"
-                :error-messages="
-                  validationStore.getFieldErrors('endeDatum')
-                "
+                :error-messages="validationStore.getFieldErrors('endeDatum')"
               />
 
               <div class="d-flex justify-space-between mt-4">
@@ -190,6 +186,7 @@ import {
   PraktikumControllerApi,
   StudentControllerApi,
   StudiengangControllerApi,
+  StudiumControllerApi,
 } from "@/api/generated/api-spec";
 import { useValidationStore } from "@/stores/validation";
 
@@ -204,6 +201,7 @@ const emit = defineEmits<{
 const studentApi = ApiFactory.getInstance(StudentControllerApi);
 const praktikumApi = ApiFactory.getInstance(PraktikumControllerApi);
 const studiengangApi = ApiFactory.getInstance(StudiengangControllerApi);
+const studiumApi = ApiFactory.getInstance(StudiumControllerApi);
 
 const validationStore = useValidationStore();
 
@@ -275,13 +273,11 @@ async function createStudent() {
     await praktikumApi.createPraktikum(praktikumRequest);
   }
 
-  if (selectedStudiengangIds.value.length > 0) {
-    // TODO: Studiengänge dem Studenten zuordnen,
-    console.log(
-      "TODO: Studiengänge zuordnen",
+  for (const studiengangId of selectedStudiengangIds.value) {
+    await studiumApi.addStudiumToStudent({
       studentId,
-      selectedStudiengangIds.value
-    );
+      studiengangId,
+    });
   }
 
   emit("created");

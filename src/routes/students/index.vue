@@ -20,7 +20,7 @@
       >
         <v-list-item
           :title="`${student.vorname ?? ''} ${student.nachname ?? ''}`"
-          :to="`/students/${student.studentId}`"
+          :to="`students/${student.studentId}`"
         >
           <template #append>
             <v-menu>
@@ -89,7 +89,10 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 
 import { ApiFactory } from "@/api/ApiFactory";
-import { StudentControllerApi } from "@/api/generated/api-spec";
+import {
+  StudentControllerApi,
+  StudiumControllerApi,
+} from "@/api/generated/api-spec";
 import StudentCreateDialog from "@/components/student/StudentCreateDialog.vue";
 import StudentDeleteDialog from "@/components/student/StudentDeleteDialog.vue";
 import StudentEditDialog from "@/components/student/StudentEditDialog.vue";
@@ -104,10 +107,18 @@ definePage({
 const route = useRoute();
 
 const studentApi = ApiFactory.getInstance(StudentControllerApi);
+const studiumApi = ApiFactory.getInstance(StudiumControllerApi);
 
 const students = ref<SimpleStudentDTO[]>([]);
 
 async function loadStudents() {
+  const studiengangId = Number(route.query.studiengang);
+  if (Number.isFinite(studiengangId)) {
+    students.value = await studiumApi.getStudentsByStudiengang(studiengangId);
+
+    return;
+  }
+
   students.value = await studentApi.getAllStudents();
 }
 

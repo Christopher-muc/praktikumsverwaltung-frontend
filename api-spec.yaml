@@ -130,6 +130,33 @@ paths:
       responses:
         "200":
           description: OK
+  /studium:
+    put:
+      tags:
+        - studium-controller
+      operationId: addStudiumToStudent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudiumMappingDTO"
+        required: true
+      responses:
+        "200":
+          description: OK
+    delete:
+      tags:
+        - studium-controller
+      operationId: removeStudiumfromStudent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudiumMappingDTO"
+        required: true
+      responses:
+        "200":
+          description: OK
   /student/{id}:
     get:
       tags:
@@ -337,6 +364,27 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TaetigkeitenblockDTO"
+  /studium/{id}:
+    get:
+      tags:
+        - studium-controller
+      operationId: getStudentsByStudiengang
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SimpleStudentDTO"
   /students:
     get:
       tags:
@@ -558,14 +606,17 @@ components:
           type: string
           format: date
         mengeMinuten:
+          minimum: 1
           type: integer
           format: int32
         grund:
           type: string
         praktikumID:
+          minimum: 0
           type: integer
           format: int32
         zeitgutschriftID:
+          minimum: 0
           type: integer
           format: int32
     TaetigkeitenblockCreationDTO:
@@ -603,6 +654,17 @@ components:
         tag:
           type: string
           format: date
+    StudiumMappingDTO:
+      type: object
+      properties:
+        studentId:
+          minimum: 1
+          type: integer
+          format: int32
+        studiengangId:
+          minimum: 1
+          type: integer
+          format: int32
     CreateUpdateStudentRequestDTO:
       required:
         - nachname
@@ -625,12 +687,16 @@ components:
           type: string
           format: date
         studentId:
+          minimum: 1
           type: integer
           format: int32
         wochenarbeitszeit:
+          maximum: 48
+          minimum: 0
           type: integer
           format: int32
         benoetigteWochen:
+          minimum: 1
           type: integer
           format: int32
     StudentDTO:
@@ -673,9 +739,12 @@ components:
           type: string
           format: date
         wochenarbeitszeit:
+          maximum: 48
+          minimum: 0
           type: integer
           format: int32
         benoetigteWochen:
+          minimum: 1
           type: integer
           format: int32
     ZeitgutschriftCreateDTO:
@@ -685,6 +754,7 @@ components:
           type: string
           format: date
         mengeMinuten:
+          minimum: 1
           type: integer
           format: int32
         grund:
@@ -700,14 +770,6 @@ components:
         name:
           minLength: 1
           type: string
-    StudiengangDTO:
-      type: object
-      properties:
-        studiengangNr:
-          type: integer
-          format: int32
-        name:
-          type: string
     SimpleStudentDTO:
       type: object
       properties:
@@ -717,6 +779,14 @@ components:
         vorname:
           type: string
         nachname:
+          type: string
+    StudiengangDTO:
+      type: object
+      properties:
+        studiengangNr:
+          type: integer
+          format: int32
+        name:
           type: string
     FullPraktikumDTO:
       type: object
