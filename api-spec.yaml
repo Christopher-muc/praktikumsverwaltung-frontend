@@ -258,12 +258,12 @@ paths:
       tags:
         - studiengang-controller
       operationId: createStudiengang
-      parameters:
-        - name: dto
-          in: query
-          required: true
-          schema:
-            $ref: "#/components/schemas/StudiengangCreationDTO"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudiengangCreationDTO"
+        required: true
       responses:
         "200":
           description: OK

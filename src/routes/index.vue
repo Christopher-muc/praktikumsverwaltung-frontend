@@ -25,7 +25,7 @@ onMounted(async () => {
     return;
   }
 
-  if (hasAnyRole([Role.STUDENT], userInfoStore.currentRoles)) {
+  if (hasAnyRole([Role.STUDENT,Role.FACHSTUDENT], userInfoStore.currentRoles)) {
     await router.replace("/me");
   }
 });

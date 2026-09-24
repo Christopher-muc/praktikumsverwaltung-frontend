@@ -27,9 +27,10 @@
         <v-list-item>
           <div class="d-flex align-center">
             <div>
-              {{ taetigkeit.taetigkeitenblockID?.beginnZeit ?? "-" }}
+              {{ taetigkeit.taetigkeitenblockID?.beginnZeit?.slice(0, -3) ?? "-" }}
               -
-              {{ taetigkeit.taetigkeitenblockID?.endeZeit ?? "-" }}
+              {{ taetigkeit.taetigkeitenblockID?.endeZeit?.slice(0,-3) ?? "-" }}
+              Uhr
             </div>
 
             <div class="flex-grow-1 text-center">

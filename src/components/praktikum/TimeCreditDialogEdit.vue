@@ -118,9 +118,15 @@ async function updateZeitgutschrift() {
     return;
   }
 
+  const mengeMinuten = Number(minuten.value);
+
+  if (!Number.isFinite(mengeMinuten)) {
+    return;
+  }
+
   const request: ZeitgutschriftUpdateDTO = {
     tag: zeitgutschrift.tag,
-    mengeMinuten: minuten.value,
+    mengeMinuten,
     grund: grund.value.trim(),
     praktikumID: props.praktikumId,
     zeitgutschriftID: zeitgutschrift.id,

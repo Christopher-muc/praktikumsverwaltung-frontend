@@ -58,7 +58,10 @@
 </template>
 
 <script setup lang="ts">
-import type { TaetigkeitenblockCreationDTO } from "@/api/generated/api-spec/models";
+import type {
+  TaetigkeitenblockCreationDTO,
+  TaetigkeitenblockDTO,
+} from "@/api/generated/api-spec/models";
 
 import { ref, watch } from "vue";
 
@@ -72,7 +75,7 @@ const dialog = defineModel<boolean>({
 
 const props = defineProps<{
   studentId: number;
-  activity: TaetigkeitenblockCreationDTO | null;
+  activity: TaetigkeitenblockDTO | null;
 }>();
 
 const emit = defineEmits<{
@@ -96,9 +99,14 @@ watch(
       return;
     }
 
-    beginnZeit.value = activity.beginnZeit ?? "";
-    endeZeit.value = activity.endeZeit ?? "";
-    homeoffice.value = activity.homeoffice ?? false;
+    beginnZeit.value =
+      activity.taetigkeitenblockID?.beginnZeit ?? "";
+
+    endeZeit.value =
+      activity.taetigkeitenblockID?.endeZeit ?? "";
+
+    homeoffice.value =
+      activity.homeoffice ?? false;
   },
   {
     immediate: true,
@@ -106,29 +114,32 @@ watch(
 );
 
 async function save() {
+  const activity = props.activity;
+  const id = activity?.taetigkeitenblockID;
+
   if (
-    !props.activity ||
-    props.activity.studentId === undefined ||
-    props.activity.tag === undefined ||
-    props.activity.beginnZeit === undefined ||
-    props.activity.endeZeit === undefined
+    !activity ||
+    id?.studentId === undefined ||
+    id.tag === undefined ||
+    id.beginnZeit === undefined ||
+    id.endeZeit === undefined
   ) {
     return;
   }
 
   const request: TaetigkeitenblockCreationDTO = {
     studentId: props.studentId,
-    tag: props.activity.tag,
+    tag: id.tag,
     beginnZeit: beginnZeit.value,
     endeZeit: endeZeit.value,
     homeoffice: homeoffice.value,
   };
 
   await taetigkeitenblockApi.updateTaetigkeitenblock(
-    props.activity.studentId,
-    props.activity.beginnZeit,
-    props.activity.endeZeit,
-    props.activity.tag,
+    id.studentId,
+    id.beginnZeit,
+    id.endeZeit,
+    id.tag,
     request
   );
 

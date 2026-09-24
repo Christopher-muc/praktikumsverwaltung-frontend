@@ -6,7 +6,7 @@
         class="d-flex align-center justify-start"
       >
         <v-app-bar-nav-icon
-          :class="{ invisible: showNavigation }"
+          :style="{ visibility: showNavigation ? 'visible' : 'hidden' }"
           class="mx-2"
           @click="emit('clickedNavIcon')"
         />
