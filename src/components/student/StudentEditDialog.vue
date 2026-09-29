@@ -5,9 +5,7 @@
     persistent
   >
     <v-card rounded="xl">
-      <v-card-title class="pa-6 pb-2">
-        Student bearbeiten
-      </v-card-title>
+      <v-card-title class="pa-6 pb-2"> Student bearbeiten </v-card-title>
 
       <v-card-text class="pa-6">
         <v-btn-toggle
@@ -16,17 +14,11 @@
           divided
           class="mb-6"
         >
-          <v-btn value="student">
-            Student
-          </v-btn>
+          <v-btn value="student"> Student </v-btn>
 
-          <v-btn value="praktikum">
-            Praktikum
-          </v-btn>
+          <v-btn value="praktikum"> Praktikum </v-btn>
 
-          <v-btn value="studiengang">
-            Studiengang
-          </v-btn>
+          <v-btn value="studiengang"> Studiengang </v-btn>
         </v-btn-toggle>
 
         <!-- STUDENT -->
@@ -97,6 +89,11 @@ import { ResponseError } from "@/api/generated/api-spec/runtime";
 import StudentNameForm from "@/components/student/StudentNameForm.vue";
 import StudentPraktikumForm from "@/components/student/StudentPraktikumForm.vue";
 import StudentStudiengaengeForm from "@/components/student/StudentStudiengaengeForm.vue";
+import { toDateInputValue } from "@/util/formatter";
+import {
+  getAddedStudiengangIds,
+  getRemovedStudiengangIds,
+} from "@/util/StudiengangUtil.ts";
 
 const dialog = defineModel<boolean>({
   default: false,
@@ -136,7 +133,6 @@ const benoetigteWochen = ref(0);
  * Studiengänge
  */
 const studiengaenge = ref<Studiengang[]>([]);
-
 const originalStudiengaenge = ref<Studiengang[]>([]);
 
 const praktikumLoading = ref(false);
@@ -154,10 +150,7 @@ watch(
 
     editMode.value = "student";
 
-    await Promise.all([
-      loadPraktikum(),
-      loadStudiengaenge(),
-    ]);
+    await Promise.all([loadPraktikum(), loadStudiengaenge()]);
   },
   {
     immediate: true,
@@ -177,27 +170,19 @@ async function loadPraktikum() {
   resetPraktikumFields();
 
   try {
-    const loadedPraktikum =
-      await praktikumApi.getPraktikum(studentId);
+    const loadedPraktikum = await praktikumApi.getPraktikum(studentId);
 
     praktikum.value = loadedPraktikum;
 
-    beginnDatum.value =
-      toDateInputValue(loadedPraktikum.beginnDatum);
+    beginnDatum.value = toDateInputValue(loadedPraktikum.beginnDatum);
 
-    endeDatum.value =
-      toDateInputValue(loadedPraktikum.endeDatum);
+    endeDatum.value = toDateInputValue(loadedPraktikum.endeDatum);
 
-    praktikumWochenarbeitszeit.value =
-      loadedPraktikum.wochenarbeitszeit ?? 0;
+    praktikumWochenarbeitszeit.value = loadedPraktikum.wochenarbeitszeit ?? 0;
 
-    benoetigteWochen.value =
-      loadedPraktikum.benoetigteWochen ?? 0;
+    benoetigteWochen.value = loadedPraktikum.benoetigteWochen ?? 0;
   } catch (error) {
-    if (
-      error instanceof ResponseError &&
-      error.response.status === 404
-    ) {
+    if (error instanceof ResponseError && error.response.status === 404) {
       praktikum.value = null;
       return;
     }
@@ -218,16 +203,11 @@ async function loadStudiengaenge() {
   studiengaengeLoading.value = true;
 
   try {
-    const fullStudent =
-      await studentApi.getStudent(studentId);
+    const fullStudent = await studentApi.getStudent(studentId);
 
-    studiengaenge.value = [
-      ...(fullStudent.studiengaenge ?? []),
-    ];
+    studiengaenge.value = [...(fullStudent.studiengaenge ?? [])];
 
-    originalStudiengaenge.value = [
-      ...(fullStudent.studiengaenge ?? []),
-    ];
+    originalStudiengaenge.value = [...(fullStudent.studiengaenge ?? [])];
   } finally {
     studiengaengeLoading.value = false;
   }
@@ -278,35 +258,20 @@ async function savePraktikum() {
 
   if (praktikum.value) {
     const request: PraktikumUpdateDTO = {
-      beginnDatum: new Date(
-        `${beginnDatum.value}T00:00:00`
-      ),
-      endeDatum: new Date(
-        `${endeDatum.value}T00:00:00`
-      ),
-      wochenarbeitszeit:
-      praktikumWochenarbeitszeit.value,
-      benoetigteWochen:
-      benoetigteWochen.value,
+      beginnDatum: new Date(`${beginnDatum.value}T00:00:00`),
+      endeDatum: new Date(`${endeDatum.value}T00:00:00`),
+      wochenarbeitszeit: praktikumWochenarbeitszeit.value,
+      benoetigteWochen: benoetigteWochen.value,
     };
 
-    await praktikumApi.updatePraktikum(
-      studentId,
-      request
-    );
+    await praktikumApi.updatePraktikum(studentId, request);
   } else {
     const request: PraktikumDTO = {
       studentId,
-      beginnDatum: new Date(
-        `${beginnDatum.value}T00:00:00`
-      ),
-      endeDatum: new Date(
-        `${endeDatum.value}T00:00:00`
-      ),
-      wochenarbeitszeit:
-      praktikumWochenarbeitszeit.value,
-      benoetigteWochen:
-      benoetigteWochen.value,
+      beginnDatum: new Date(`${beginnDatum.value}T00:00:00`),
+      endeDatum: new Date(`${endeDatum.value}T00:00:00`),
+      wochenarbeitszeit: praktikumWochenarbeitszeit.value,
+      benoetigteWochen: benoetigteWochen.value,
     };
 
     await praktikumApi.createPraktikum(request);
@@ -323,39 +288,32 @@ async function saveStudiengaenge() {
     return;
   }
 
-  for (const studiengang of studiengaenge.value) {
-    if (studiengang.studiengangNr === undefined) {
-      continue;
-    }
+  const addedStudiengangIds = getAddedStudiengangIds(
+    studiengaenge.value,
+    originalStudiengaenge.value
+  );
 
-    const alreadyExists = originalStudiengaenge.value.some(
-      (originalStudiengang) =>
-        originalStudiengang.studiengangNr ===
-        studiengang.studiengangNr
-    );
+  const removedStudiengangIds = getRemovedStudiengangIds(
+    studiengaenge.value,
+    originalStudiengaenge.value
+  );
 
-    if (alreadyExists) {
-      continue;
-    }
-
+  for (const studiengangId of addedStudiengangIds) {
     await studiumApi.addStudiumToStudent({
       studentId,
-      studiengangId: studiengang.studiengangNr,
+      studiengangId,
+    });
+  }
+
+  for (const studiengangId of removedStudiengangIds) {
+    await studiumApi.removeStudiumfromStudent({
+      studentId,
+      studiengangId,
     });
   }
 
   emit("updated");
   close();
-}
-
-function toDateInputValue(
-  value: Date | undefined
-): string {
-  if (!value) {
-    return "";
-  }
-
-  return value.toISOString().slice(0, 10);
 }
 
 function resetPraktikumFields() {

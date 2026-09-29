@@ -102,6 +102,10 @@ import { ApiFactory } from "@/api/ApiFactory";
 import { StudiengangControllerApi } from "@/api/generated/api-spec/apis";
 import CreateStudiengang from "@/components/studiengang/CreateStudiengang.vue";
 import { Role } from "@/types/Role";
+import {
+  getStudiengangId,
+  getStudiengangRoute,
+} from "@/util/StudiengangUtil.ts";
 
 definePage({
   meta: {
@@ -128,30 +132,30 @@ async function loadStudiengaenge() {
 }
 
 async function openStudiengang(studiengangNr?: number) {
-  if (studiengangNr === undefined) {
+  const route = getStudiengangRoute(studiengangNr);
+
+  if (!route) {
     return;
   }
 
-  await router.push({
-    path: "/students",
-    query: {
-      studiengang: studiengangNr,
-    },
-  });
+  await router.push(route);
 }
 
 async function deleteStudiengang(studiengang: StudiengangDTO) {
-  if (studiengang.studiengangNr === undefined) {
+  const studiengangId = getStudiengangId(studiengang);
+
+  if (studiengangId === undefined) {
     return;
   }
 
-  deletingId.value = studiengang.studiengangNr;
+  deletingId.value = studiengangId;
 
-  await api.deleteStudiengang(studiengang.studiengangNr);
-
-  await loadStudiengaenge();
-
-  deletingId.value = undefined;
+  try {
+    await api.deleteStudiengang(studiengangId);
+    await loadStudiengaenge();
+  } finally {
+    deletingId.value = undefined;
+  }
 }
 
 onMounted(loadStudiengaenge);

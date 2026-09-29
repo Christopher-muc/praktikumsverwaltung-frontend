@@ -97,6 +97,7 @@ import StudentCreateDialog from "@/components/student/StudentCreateDialog.vue";
 import StudentDeleteDialog from "@/components/student/StudentDeleteDialog.vue";
 import StudentEditDialog from "@/components/student/StudentEditDialog.vue";
 import { Role } from "@/types/Role";
+import { filterStudents, getStudiengangId } from "@/util/StudentUtil.ts";
 
 definePage({
   meta: {
@@ -112,8 +113,9 @@ const studiumApi = ApiFactory.getInstance(StudiumControllerApi);
 const students = ref<SimpleStudentDTO[]>([]);
 
 async function loadStudents() {
-  const studiengangId = Number(route.query.studiengang);
-  if (Number.isFinite(studiengangId)) {
+  const studiengangId = getStudiengangId(route.query.studiengang);
+
+  if (studiengangId !== undefined) {
     students.value = await studiumApi.getStudentsByStudiengang(studiengangId);
 
     return;
@@ -124,23 +126,9 @@ async function loadStudents() {
 
 onMounted(loadStudents);
 
-const filteredStudents = computed(() => {
-  const search = String(route.query.search ?? "")
-    .trim()
-    .toLowerCase();
-
-  if (!search) {
-    return students.value;
-  }
-
-  return students.value.filter((student) => {
-    const fullName = `${student.vorname ?? ""} ${student.nachname ?? ""}`
-      .trim()
-      .toLowerCase();
-
-    return fullName.includes(search);
-  });
-});
+const filteredStudents = computed(() =>
+  filterStudents(students.value, route.query.search)
+);
 
 const createDialog = ref(false);
 const editDialog = ref(false);

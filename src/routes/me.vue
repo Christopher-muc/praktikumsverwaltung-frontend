@@ -22,11 +22,12 @@ import {
   PraktikumControllerApi,
   StudentControllerApi,
 } from "@/api/generated/api-spec";
-import { ResponseError } from "@/api/generated/api-spec/runtime";
 import StudentDetail from "@/components/student/StudentDetail.vue";
 import useHasAnyRole from "@/composables/useHasAnyRole";
+import { useUserInfoStore } from "@/stores/userinfo";
 import { Role } from "@/types/Role";
-import { useUserInfoStore } from "@/stores/userinfo.ts";
+import { isNotFoundError } from "@/util/ApiErrorUtil.ts";
+import { getStudentIdFromUsername } from "@/util/StudentUtil.ts";
 
 definePage({
   meta: {
@@ -35,6 +36,7 @@ definePage({
 });
 
 const studentApi = ApiFactory.getInstance(StudentControllerApi);
+
 const praktikumApi = ApiFactory.getInstance(PraktikumControllerApi);
 
 const canWriteZeitgutschrift = useHasAnyRole(Role.FACHSTUDENT);
@@ -45,15 +47,11 @@ const praktikum = ref<FullPraktikumDTO>();
 const userInfoStore = useUserInfoStore();
 
 async function loadStudent() {
-  if (userInfoStore.userInfo === null) {
-    return;
-  }
-
-  const studentId = Number(
-    userInfoStore.userInfo.preferred_username
+  const studentId = getStudentIdFromUsername(
+    userInfoStore.userInfo?.preferred_username
   );
 
-  if (!Number.isInteger(studentId) || studentId <= 0) {
+  if (studentId === undefined) {
     return;
   }
 
@@ -68,13 +66,9 @@ async function loadPraktikum() {
   }
 
   try {
-    praktikum.value =
-      await praktikumApi.getPraktikum(studentId);
+    praktikum.value = await praktikumApi.getPraktikum(studentId);
   } catch (error) {
-    if (
-      error instanceof ResponseError &&
-      error.response.status === 404
-    ) {
+    if (isNotFoundError(error)) {
       praktikum.value = undefined;
       return;
     }

@@ -72,9 +72,7 @@
           </template>
         </v-list-item>
 
-        <v-divider
-          v-if="index < selectedZeitgutschriften.length - 1"
-        />
+        <v-divider v-if="index < selectedZeitgutschriften.length - 1" />
       </template>
     </v-list>
 
@@ -121,6 +119,7 @@ import { ZeitgutschriftControllerApi } from "@/api/generated/api-spec";
 import TimeCreditDialogCreate from "@/components/praktikum/TimeCreditDialogCreate.vue";
 import TimeCreditDialogEdit from "@/components/praktikum/TimeCreditDialogEdit.vue";
 import { toDateString } from "@/util/formatter";
+import { filterZeitgutschriftenByDate } from "@/util/TimeCreditListUtil";
 
 const props = defineProps<{
   studentId: number;
@@ -133,9 +132,7 @@ const emit = defineEmits<{
   changed: [];
 }>();
 
-const zeitgutschriftApi = ApiFactory.getInstance(
-  ZeitgutschriftControllerApi
-);
+const zeitgutschriftApi = ApiFactory.getInstance(ZeitgutschriftControllerApi);
 
 const createDialog = ref(false);
 const editDialog = ref(false);
@@ -147,14 +144,9 @@ const selectedZeitgutschriften = computed<SimpleZeitgutschriftDTO[]>(() => {
     return [];
   }
 
-  const selectedDateKey = toDateKey(props.selectedDate);
-
-  return (
-    props.praktikum.zeitgutschriften?.filter((zeitgutschrift) => {
-      const tag = zeitgutschrift.tag;
-
-      return tag !== undefined && toDateKey(tag) === selectedDateKey;
-    }) ?? []
+  return filterZeitgutschriftenByDate(
+    props.praktikum.zeitgutschriften ?? [],
+    props.selectedDate
   );
 });
 
@@ -175,16 +167,12 @@ function openEditDialog(zeitgutschrift: SimpleZeitgutschriftDTO) {
   editDialog.value = true;
 }
 
-async function deleteZeitgutschrift(
-  zeitgutschrift: SimpleZeitgutschriftDTO
-) {
+async function deleteZeitgutschrift(zeitgutschrift: SimpleZeitgutschriftDTO) {
   if (!props.canWrite || zeitgutschrift.id === undefined) {
     return;
   }
 
-  await zeitgutschriftApi.deleteZeitgutschrift(
-    zeitgutschrift.id
-  );
+  await zeitgutschriftApi.deleteZeitgutschrift(zeitgutschrift.id);
 
   emit("changed");
 }
@@ -198,13 +186,5 @@ function handleUpdated() {
   editDialog.value = false;
   zeitgutschriftToEdit.value = undefined;
   emit("changed");
-}
-
-function toDateKey(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
 }
 </script>

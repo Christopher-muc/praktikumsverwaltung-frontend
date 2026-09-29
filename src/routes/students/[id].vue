@@ -23,9 +23,9 @@ import {
   PraktikumControllerApi,
   StudentControllerApi,
 } from "@/api/generated/api-spec";
-import { ResponseError } from "@/api/generated/api-spec/runtime";
 import StudentDetail from "@/components/student/StudentDetail.vue";
 import { Role } from "@/types/Role.ts";
+import { isNotFoundError } from "@/util/ApiErrorUtil.ts";
 
 /*
  * Nur ADMIN darf fremde Studenten aufrufen.
@@ -68,7 +68,7 @@ async function loadPraktikum() {
   try {
     praktikum.value = await praktikumApi.getPraktikum(studentId);
   } catch (error) {
-    if (error instanceof ResponseError && error.response.status === 404) {
+    if (isNotFoundError(error)) {
       praktikum.value = undefined;
       return;
     }

@@ -75,11 +75,11 @@ async function search() {
   const searchQuery = query.value.trim();
 
   await router.push({
-    path: "/",
+    path: "/students",
     query: searchQuery
       ? {
-          search: searchQuery,
-        }
+        search: searchQuery,
+      }
       : {},
   });
 }

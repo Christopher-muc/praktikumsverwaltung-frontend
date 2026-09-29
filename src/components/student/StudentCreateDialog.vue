@@ -174,10 +174,7 @@
 </template>
 
 <script setup lang="ts">
-import type {
-  PraktikumDTO,
-  StudiengangDTO,
-} from "@/api/generated/api-spec/models";
+import type { StudiengangDTO } from "@/api/generated/api-spec/models";
 
 import { reactive, ref, watch } from "vue";
 
@@ -189,6 +186,11 @@ import {
   StudiumControllerApi,
 } from "@/api/generated/api-spec";
 import { useValidationStore } from "@/stores/validation";
+import {
+  createPraktikumDTO,
+  hasCompletePraktikumDates,
+  hasPraktikumData,
+} from "@/util/StudentCreateUtil";
 
 const dialog = defineModel<boolean>({
   default: false,
@@ -199,8 +201,11 @@ const emit = defineEmits<{
 }>();
 
 const studentApi = ApiFactory.getInstance(StudentControllerApi);
+
 const praktikumApi = ApiFactory.getInstance(PraktikumControllerApi);
+
 const studiengangApi = ApiFactory.getInstance(StudiengangControllerApi);
+
 const studiumApi = ApiFactory.getInstance(StudiumControllerApi);
 
 const validationStore = useValidationStore();
@@ -229,8 +234,7 @@ watch(dialog, async (open) => {
 });
 
 async function loadStudiengaenge() {
-  availableStudiengaenge.value =
-    await studiengangApi.getStudiengaenge();
+  availableStudiengaenge.value = await studiengangApi.getStudiengaenge();
 }
 
 function nextStep() {
@@ -247,28 +251,11 @@ async function createStudent() {
     nachname: newStudent.nachname.trim(),
   });
 
-  const hasPraktikumData =
-    newPraktikum.wochenarbeitszeit !== 0 ||
-    newPraktikum.benoetigteWochen !== 0 ||
-    newPraktikum.beginnDatum !== "" ||
-    newPraktikum.endeDatum !== "";
-
   if (
-    hasPraktikumData &&
-    newPraktikum.beginnDatum !== "" &&
-    newPraktikum.endeDatum !== ""
+    hasPraktikumData(newPraktikum) &&
+    hasCompletePraktikumDates(newPraktikum)
   ) {
-    const praktikumRequest: PraktikumDTO = {
-      studentId,
-      beginnDatum: new Date(
-        `${newPraktikum.beginnDatum}T00:00:00`
-      ),
-      endeDatum: new Date(
-        `${newPraktikum.endeDatum}T00:00:00`
-      ),
-      benoetigteWochen: newPraktikum.benoetigteWochen,
-      wochenarbeitszeit: newPraktikum.wochenarbeitszeit,
-    };
+    const praktikumRequest = createPraktikumDTO(studentId, newPraktikum);
 
     await praktikumApi.createPraktikum(praktikumRequest);
   }

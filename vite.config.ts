@@ -4,9 +4,9 @@ import { fileURLToPath, URL } from "node:url";
 import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
 import vue from "@vitejs/plugin-vue";
 import UnpluginFonts from "unplugin-fonts/vite";
-import { defineConfig } from "vite";
 import vueDevTools from "vite-plugin-vue-devtools";
 import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
+import { defineConfig } from "vitest/config";
 import VueRouter from "vue-router/vite";
 
 import { EncodeBracketsPlugin, extendRoute } from "./encode-brackets-plugin.ts";
@@ -14,6 +14,7 @@ import { EncodeBracketsPlugin, extendRoute } from "./encode-brackets-plugin.ts";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const isDevelopment = mode === "development";
+
   return {
     plugins: [
       VueRouter({
@@ -23,13 +24,16 @@ export default defineConfig(({ mode }) => {
         dts: "./route-map.d.ts",
         ...(isDevelopment && { extendRoute }),
       }),
+
       vue({
         template: { transformAssetUrls },
         features: {
           optionsAPI: isDevelopment,
         },
       }),
+
       vuetify(),
+
       UnpluginFonts({
         inlineFontFace: true,
         fontsource: {
@@ -45,18 +49,22 @@ export default defineConfig(({ mode }) => {
           ],
         },
       }),
+
       vueDevTools(),
+
       VueI18nPlugin({
         include: resolve(
           dirname(fileURLToPath(import.meta.url)),
           "./src/locales/*.json"
         ),
       }),
+
       {
         ...EncodeBracketsPlugin(),
-        apply: "serve", // Ensures plugin is only applied during serve, see https://vite.dev/guide/using-plugins#conditional-application
+        apply: "serve",
       },
     ],
+
     server: {
       host: true,
       port: 8081,
@@ -64,9 +72,9 @@ export default defineConfig(({ mode }) => {
         "/api": "http://localhost:8083",
         "/actuator": "http://localhost:8083",
       },
-      allowedHosts: ["host.docker.internal"], // required to use frontend behind proxy (e.g. API Gateway)
+      allowedHosts: ["host.docker.internal"],
       headers: {
-        "x-frame-options": "SAMEORIGIN", // required to use devtools behind proxy (e.g. API Gateway)
+        "x-frame-options": "SAMEORIGIN",
       },
     },
     resolve: {

@@ -65,6 +65,7 @@ import { computed, ref } from "vue";
 import { ApiFactory } from "@/api/ApiFactory";
 import { ZeitgutschriftControllerApi } from "@/api/generated/api-spec";
 import { useValidationStore } from "@/stores/validation";
+import { toDateString } from "@/util/formatter";
 
 const dialog = defineModel<boolean>({
   default: false,
@@ -91,7 +92,7 @@ const formattedDate = computed(() => {
     return "";
   }
 
-  return props.selectedDate.toLocaleDateString("de-DE");
+  return toDateString(props.selectedDate);
 });
 
 async function createZeitgutschrift() {

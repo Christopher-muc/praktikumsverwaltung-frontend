@@ -29,7 +29,7 @@
             <div>
               {{ taetigkeit.taetigkeitenblockID?.beginnZeit?.slice(0, -3) ?? "-" }}
               -
-              {{ taetigkeit.taetigkeitenblockID?.endeZeit?.slice(0,-3) ?? "-" }}
+              {{ taetigkeit.taetigkeitenblockID?.endeZeit?.slice(0, -3) ?? "-" }}
               Uhr
             </div>
 
@@ -113,7 +113,11 @@ import { computed, ref } from "vue";
 
 import { ApiFactory } from "@/api/ApiFactory";
 import { TaetigkeitenblockControllerApi } from "@/api/generated/api-spec";
+import {
+  filterAndSortActivities,
+} from "@/util/ActivityListUtil";
 import { toDateString } from "@/util/formatter";
+
 import ActivityCreate from "./ActivityCreate.vue";
 import ActivityEdit from "./ActivityEdit.vue";
 
@@ -144,33 +148,11 @@ const selectedTaetigkeiten = computed<TaetigkeitenblockDTO[]>(() => {
     return [];
   }
 
-  return (
-    props.praktikum.taetigkeiten
-      ?.filter((taetigkeit) => {
-        const tag = taetigkeit.taetigkeitenblockID?.tag;
-
-        if (!tag) {
-          return false;
-        }
-
-        return isSameDate(tag, selectedDate);
-      })
-      .sort((a, b) => {
-        const first = a.taetigkeitenblockID?.beginnZeit ?? "";
-        const second = b.taetigkeitenblockID?.beginnZeit ?? "";
-
-        return first.localeCompare(second);
-      }) ?? []
+  return filterAndSortActivities(
+    props.praktikum.taetigkeiten ?? [],
+    selectedDate
   );
 });
-
-function isSameDate(first: Date, second: Date): boolean {
-  return (
-    first.getFullYear() === second.getFullYear() &&
-    first.getMonth() === second.getMonth() &&
-    first.getDate() === second.getDate()
-  );
-}
 
 function openCreateDialog() {
   if (!props.canWrite || !props.selectedDate) {
@@ -225,5 +207,4 @@ function handleUpdated() {
   selectedTaetigkeit.value = null;
   emit("changed");
 }
-
 </script>
