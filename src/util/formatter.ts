@@ -29,3 +29,33 @@ export function toDateInputValue(value: Date | undefined): string {
 
   return toDateKey(value);
 }
+export function toLocalTimeString(time: string | undefined): string {
+  if (!time) {
+    return "-";
+  }
+
+  const parts = time.split(":");
+
+  if (parts.length < 2 || parts.length > 3) {
+    return "-";
+  }
+
+  const hours = Number(parts[0]);
+  const minutes = Number(parts[1]);
+  const seconds = parts[2] === undefined ? 0 : Number(parts[2]);
+
+  if (
+    !Number.isInteger(hours) ||
+    !Number.isInteger(minutes) ||
+    !Number.isInteger(seconds) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59 ||
+    seconds !== 0
+  ) {
+    return "-";
+  }
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}

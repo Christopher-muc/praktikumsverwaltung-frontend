@@ -27,9 +27,11 @@
         <v-list-item>
           <div class="d-flex align-center">
             <div>
-              {{ taetigkeit.taetigkeitenblockID?.beginnZeit?.slice(0, -3) ?? "-" }}
+              {{
+                toLocalTimeString(taetigkeit.taetigkeitenblockID?.beginnZeit)
+              }}
               -
-              {{ taetigkeit.taetigkeitenblockID?.endeZeit?.slice(0, -3) ?? "-" }}
+              {{ toLocalTimeString(taetigkeit.taetigkeitenblockID?.endeZeit) }}
               Uhr
             </div>
 
@@ -113,11 +115,8 @@ import { computed, ref } from "vue";
 
 import { ApiFactory } from "@/api/ApiFactory";
 import { TaetigkeitenblockControllerApi } from "@/api/generated/api-spec";
-import {
-  filterAndSortActivities,
-} from "@/util/ActivityListUtil";
-import { toDateString } from "@/util/formatter";
-
+import { filterAndSortActivities } from "@/util/ActivityListUtil";
+import { toDateString, toLocalTimeString } from "@/util/formatter";
 import ActivityCreate from "./ActivityCreate.vue";
 import ActivityEdit from "./ActivityEdit.vue";
 
